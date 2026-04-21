@@ -48,31 +48,23 @@ const Body = z.object({
   customerId: optionalString,
 
   contactName: optionalString,
-  contactEmail: optionalEmail,
   contactPhone: optionalString,
-
-  contactTaxId: optionalString,
   contactAddress: optionalString,
-  contactType: optionalString,
-  companyName: optionalString,
+  
+  orderName: optionalString,
+  quoteDate: optionalString,
+  deliveryDate: optionalString,
+  expiryDate: optionalString,
 
-  currency: z.string().default('VND'),
-  locale: z.enum(['vi', 'en']).default('vi'),
   status: z.string().optional(),
-
-  // ✅ cho phép tạo quote nháp chưa có hàng
   items: z.array(Item).default([]),
 
   discountPercent: z.number().optional(),
   discountAmount: z.number().optional(),
   shippingFee: z.number().optional(),
-  taxPercent: z.number().optional(),
-  householdTaxPercent: z.number().optional(),
   depositAmount: z.number().optional(),
-  validUntil: z.string().datetime().optional(),
 
   notesVi: optionalString,
-  notesEn: optionalString
 });
 
 type ItemIn = z.infer<typeof Item>;
@@ -110,64 +102,42 @@ export async function POST(req: NextRequest) {
     subTotal: sub,
     discountPercent: data.discountPercent,
     discountAmount: data.discountAmount,
-    taxPercent: data.taxPercent,
-    householdTaxPercent: data.householdTaxPercent ?? 0, 
     shippingFee: data.shippingFee,
   });
 
-  const { discountAmount, taxAmount, householdTaxAmount, grandTotal } = calc;
-  const householdTaxPercent = data.householdTaxPercent ?? 0;
+  const { discountAmount, grandTotal } = calc;
+
+  let finalNotes = data.notesVi || "";
+  if (data.orderName) finalNotes = `Tên đơn hàng: ${data.orderName}\n` + finalNotes;
+  if (data.deliveryDate) finalNotes = `Ngày giao: ${data.deliveryDate}\n` + finalNotes;
+  if (data.contactName) finalNotes = `Người liên hệ: ${data.contactName} (${data.contactPhone || ''})\n` + finalNotes;
 
   const created = await prismadb.quote.create({
     data: {
       orgId,
-
       number,
       status: (data.status as QuoteStatus) || 'DRAFT',
-      currency: data.currency,
-      locale: data.locale,
-
       customerId: data.customerId,
-      contactName: data.contactName,
-      contactEmail: data.contactEmail,
-      contactPhone: data.contactPhone,
-
-      contactTaxId: data.contactTaxId,
-      contactAddress: data.contactAddress,
-      contactType: data.contactType,
-      companyName: data.companyName,
 
       items: {
         create: data.items.map((it) => ({
           sku: it.sku ?? '',
           nameVi: it.nameVi,
-          nameEn: it.nameEn ?? '',
           size: it.size,
-          unit: it.unit,
           quantity: it.quantity,
           unitPrice: it.unitPrice,
           lineTotal: it.unitPrice * it.quantity,
-          note: it.note,
-          imageUrl: it.imageUrl,
           productId: it.productId,
           variantId: it.variantId,
-          costPrice: it.costPrice
         }))
       },
 
       subTotal: sub,
-      discountPercent: data.discountPercent,
-      discountAmount,
-      taxPercent: data.taxPercent,
-      taxAmount,
-      householdTaxPercent,
-      householdTaxAmount,
+      discount: discountAmount || data.discountAmount || 0,
       shippingFee: data.shippingFee ?? 0,
-      depositAmount: data.depositAmount ?? 0,
       grandTotal,
-      notesVi: data.notesVi,
-      notesEn: data.notesEn,
-      validUntil: data.validUntil ? new Date(data.validUntil) : undefined
+      notes: finalNotes,
+      expiryDate: data.expiryDate ? new Date(data.expiryDate) : undefined
     },
     include: {
       items: true,

@@ -54,9 +54,8 @@ export async function GET(req: NextRequest) {
       Promise.resolve([])
       ,
 
-      // Top 10 sản phẩm bán nhiều nhất (theo doanh thu)
-      quoteItemModel ? quoteItemModel.groupBy({
-        by: ["sku", "nameVi"],
+      // Top 10 sản phẩm bán nhiều nhất - Dùng findMany và group bằng JS để tránh lỗi groupBy trên relation
+      quoteItemModel ? quoteItemModel.findMany({
         where: {
           quote: {
             orgId,
@@ -64,11 +63,33 @@ export async function GET(req: NextRequest) {
             status: { in: ["CONFIRMED", "DONE"] },
           },
         },
-        _sum: { quantity: true, lineTotal: true },
-        orderBy: { _sum: { lineTotal: "desc" } },
-        take: 10,
+        include: {
+          product: {
+            select: { sku: true, nameVi: true }
+          }
+        }
       }) : Promise.resolve([]),
     ]);
+
+    // Xử lý gộp nhóm sản phẩm bằng JS
+    const groupedProducts: Record<string, any> = {};
+    if (Array.isArray(topProducts)) {
+      topProducts.forEach((item: any) => {
+        const sku = item.sku || item.product?.sku || "N/A";
+        const name = item.nameVi || item.product?.nameVi || "Sản phẩm không tên";
+        const key = sku;
+        
+        if (!groupedProducts[key]) {
+          groupedProducts[key] = { sku, nameVi: name, _sum: { quantity: 0, lineTotal: 0 } };
+        }
+        groupedProducts[key]._sum.quantity += (item.quantity || 0);
+        groupedProducts[key]._sum.lineTotal += (item.lineTotal || 0);
+      });
+    }
+
+    const finalTopProducts = Object.values(groupedProducts)
+      .sort((a: any, b: any) => b._sum.lineTotal - a._sum.lineTotal)
+      .slice(0, 10);
 
     // Tổng hợp số liệu tài chính
     const summary = quotes.reduce(
@@ -141,9 +162,14 @@ export async function GET(req: NextRequest) {
     const byDay: Record<string, number> = {};
     for (const q of quotes) {
       if (q.status !== "CONFIRMED" && q.status !== "DONE") continue;
-      const day = q.createdAt.toISOString().slice(0, 10);
-      const netSales = q.subTotal || 0;
-      byDay[day] = (byDay[day] ?? 0) + netSales;
+      try {
+        const dateObj = q.createdAt instanceof Date ? q.createdAt : new Date(q.createdAt);
+        const day = dateObj.toISOString().slice(0, 10);
+        const netSales = q.subTotal || 0;
+        byDay[day] = (byDay[day] ?? 0) + netSales;
+      } catch (err) {
+        console.error("Date formatting error in report-sales", err);
+      }
     }
     const revenueByDay = Object.entries(byDay)
       .map(([date, amount]) => ({ date, amount }))
@@ -181,11 +207,11 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    const topProduct = topProducts[0];
+    const topProduct = finalTopProducts && finalTopProducts.length > 0 ? finalTopProducts[0] : null;
     if (topProduct && (topProduct._sum?.quantity || 0) > 5) {
       analysis.insights.push({ 
         type: 'star', 
-        text: `Sức hút mạnh từ "${topProduct.nameVi}". AI gợi ý nhập thêm nguyên liệu cho dòng này để tránh đứt hàng.` 
+        text: `Sức hút mạnh từ "${topProduct.nameVi || topProduct.sku}". AI gợi ý nhập thêm nguyên liệu cho dòng này để tránh đứt hàng.` 
       });
     }
 
@@ -202,7 +228,9 @@ export async function GET(req: NextRequest) {
       analysis.suggestions.push("Tối ưu lãi: Bạn đang chiết khấu cao trong khi biên lãi mỏng. AI khuyên nên dùng quà tặng thay vì giảm giá trực tiếp.");
     }
     
-    analysis.suggestions.push(`Mở rộng: Khách hàng mua "${topProduct?.nameVi || 'Mây tre'}" thường quan tâm đến đồ decor mini. Hãy thử up-sell thêm nhóm này.`);
+    if (topProduct) {
+      analysis.suggestions.push(`Mở rộng: Khách hàng mua "${topProduct.nameVi || 'Mây tre'}" thường quan tâm đến đồ decor mini. Hãy thử up-sell thêm nhóm này.`);
+    }
 
     return NextResponse.json({
       period: { from: dateFrom, to: dateTo },
@@ -210,7 +238,7 @@ export async function GET(req: NextRequest) {
       analysis,
       revenueByDay,
       paymentsByMethod: payments,
-      topProducts,
+      topProducts: finalTopProducts || [],
       quotes,
     });
   } catch (error: any) {

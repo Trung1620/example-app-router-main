@@ -29,8 +29,6 @@ export function calcQuoteGrandTotal(input: {
   discountPercent?: number | null;
   discountAmount?: number | null;
   shippingFee?: number | null;
-  taxPercent?: number | null;
-  householdTaxPercent?: number | null;
 }) {
   const subTotal = Number(input.subTotal || 0);
   const shippingFee = Number(input.shippingFee || 0);
@@ -42,25 +40,13 @@ export function calcQuoteGrandTotal(input: {
 
   const afterDiscount = roundMoney(subTotal - discountAmount);
 
-  const taxAmount =
-    input.taxPercent != null
-      ? roundMoney(afterDiscount * (Number(input.taxPercent || 0) / 100))
-      : 0;
-
-  const householdTaxAmount =
-    input.householdTaxPercent != null
-      ? roundMoney(afterDiscount * (Number(input.householdTaxPercent || 0) / 100))
-      : 0;
-
   const grandTotal = roundMoney(
-    afterDiscount + shippingFee + taxAmount + householdTaxAmount
+    afterDiscount + shippingFee
   );
 
   return {
     subTotal,
     discountAmount,
-    taxAmount,
-    householdTaxAmount,
     grandTotal,
   };
 }

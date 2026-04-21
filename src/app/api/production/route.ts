@@ -10,8 +10,8 @@ export async function GET(req: NextRequest) {
       where: { orgId },
       include: {
         product: { select: { nameVi: true, sku: true, images: true } },
-        workers: { include: { artisan: { select: { name: true } } } },
-        materials: { include: { material: { select: { name: true, unit: true } } } },
+        artisan: { select: { name: true } },
+        jobSheets: { include: { artisan: { select: { name: true } } } },
       },
       orderBy: { createdAt: "desc" },
     });
@@ -36,6 +36,8 @@ export async function POST(req: NextRequest) {
       laborCostPerUnit,
       otherCosts,
       duration,
+      startDate,
+      expectedEndDate,
       notes 
     } = body;
 
@@ -82,13 +84,10 @@ export async function POST(req: NextRequest) {
         otherCosts: nOtherCosts,
         actualTotalCost: tActual,
         duration: duration ? parseInt(duration) : undefined,
-        notes,
-        workers: {
-          create: Array.isArray(artisanIds) ? artisanIds.map((id: string) => ({ artisanId: id })) : []
-        },
-        materials: {
-          create: materialData
-        }
+        startDate: startDate ? new Date(startDate) : undefined,
+        expectedEndDate: expectedEndDate ? new Date(expectedEndDate) : undefined,
+        note: notes + (Array.isArray(artisanIds) ? `\nThợ tham gia: ${artisanIds.join(", ")}` : ""),
+        artisanId: Array.isArray(artisanIds) && artisanIds.length > 0 ? artisanIds[0] : undefined,
       },
     });
 

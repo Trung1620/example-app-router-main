@@ -11,19 +11,19 @@ export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }
 
     const product = await prismadb.product.findFirst({
       where: { id },
-      include: { images: true, variants: true, stockBalances: true },
+      include: { variants: true, stockBalances: true, category: true },
     });
 
     if (!product) return NextResponse.json({ error: "Không tìm thấy sản phẩm" }, { status: 404 });
 
     // Ép link ảnh thật và làm phẳng dữ liệu để App dễ nhận
-    const imgUrl = product.images?.[0]?.url || product.image || "https://picsum.photos/400/300";
+    const imgUrl = (product.images && product.images.length > 0) ? product.images[0] : "https://picsum.photos/400/300";
     
     // TRẢ VỀ TRỰC TIẾP ĐỐI TƯỢNG (Mở hộp)
     return NextResponse.json({
       ...product,
       image: imgUrl,
-      inStock: product.stockBalances?.some(s => s.qty > 0) ?? false,
+      inStock: product.stockBalances?.some((s: any) => s.qty > 0) ?? false,
       priceVnd: product.priceVnd || (product.variants?.[0]?.priceVnd) || 0,
     });
 
@@ -50,7 +50,6 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
 
 export async function DELETE(req: Request, ctx: { params: Promise<{ id: string }> }) {
     const { id } = await ctx.params;
-    await prismadb.image.deleteMany({ where: { productId: id } });
     await prismadb.product.delete({ where: { id } });
     return NextResponse.json({ ok: true });
 }

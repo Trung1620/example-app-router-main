@@ -152,6 +152,7 @@ model Artisan {
   attendances      ArtisanAttendance[] // Dữ liệu điểm danh
   transactions     ArtisanTransaction[] // Lịch sử tài chính của thợ
   productionOrders ProductionOrder[] // Các lệnh sản xuất được giao
+  productionWork   ProductionWorker[] // Các công việc được giao trong lệnh SX
   jobSheets        JobSheet[] // Các phiếu gia công được giao
   debts            Debt[] // Các khoản công nợ của thợ
 
@@ -396,9 +397,34 @@ model ProductionOrder {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  
+  workers   ProductionWorker[]
+  materials ProductionMaterial[]
   jobSheets JobSheet[] // Các phiếu gia công chi tiết từ lệnh này
 
   @@index([orgId])
+}
+
+model ProductionWorker {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  orderId   String   @db.ObjectId
+  order     ProductionOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  artisanId String   @db.ObjectId
+  artisan   Artisan  @relation(fields: [artisanId], references: [id])
+
+  @@unique([orderId, artisanId])
+}
+
+model ProductionMaterial {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  orderId    String   @db.ObjectId
+  order      ProductionOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  materialId String   @db.ObjectId
+  material   Material @relation(fields: [materialId], references: [id])
+  quantity   Float
+  unitCost   Float?
+
+  @@index([orderId])
 }
 
 // ==========================================
@@ -593,6 +619,10 @@ model QuoteItem {
   unitPrice Float // Đơn giá bán tại thời điểm đó
   discount  Float @default(0) // Giảm giá riêng cho dòng này
   lineTotal Float // Thành tiền sau giảm giá
+
+  // Snapshot fields for easier grouping and historical accuracy
+  sku       String?
+  nameVi    String?
 }
 
 enum DeliveryStatus {

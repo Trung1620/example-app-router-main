@@ -94,22 +94,26 @@ export async function GET(req: NextRequest) {
     const payable = labor + taxes;
 
     // 4. Lấy dữ liệu biểu đồ tiền về (Cash-in) theo ngày
-    const [allPaidQuotes] = await Promise.all([
-      quoteModel.findMany({
-        where: { 
-          orgId, 
-          createdAt: { gte: fromDate, lte: toDate },
-          paymentStatus: "PAID"
-        },
-        select: { createdAt: true, grandTotal: true }
-      })
-    ]);
+    const allPaidQuotes = await quoteModel.findMany({
+      where: { 
+        orgId, 
+        createdAt: { gte: fromDate, lte: toDate },
+        paymentStatus: "PAID"
+      },
+      select: { createdAt: true, grandTotal: true }
+    }) || [];
 
     // Gom dữ liệu theo ngày (YYYY-MM-DD)
     const cashInMap: Record<string, number> = {};
     allPaidQuotes.forEach((q: any) => {
-      const dateKey = q.createdAt.toISOString().split("T")[0];
-      cashInMap[dateKey] = (cashInMap[dateKey] || 0) + (q.grandTotal || 0);
+      if (q.createdAt) {
+        try {
+          const dateKey = new Date(q.createdAt).toISOString().split("T")[0];
+          cashInMap[dateKey] = (cashInMap[dateKey] || 0) + (q.grandTotal || 0);
+        } catch (err) {
+          console.error("Date formatting error in analytics", err);
+        }
+      }
     });
 
     const chartData = Object.keys(cashInMap).sort().map(date => ({
@@ -128,10 +132,10 @@ export async function GET(req: NextRequest) {
     const totalForPie = (absProfit + labor + material + taxes) || 1;
     
     const percentages = {
-      profit: Math.round((absProfit / totalForPie) * 100),
-      labor: Math.round((labor / totalForPie) * 100),
-      material: Math.round((material / totalForPie) * 100),
-      taxes: Math.round((taxes / totalForPie) * 100),
+      profit: Math.round((absProfit / totalForPie) * 100) || 0,
+      labor: Math.round((labor / totalForPie) * 100) || 0,
+      material: Math.round((material / totalForPie) * 100) || 0,
+      taxes: Math.round((taxes / totalForPie) * 100) || 0,
     };
 
     // Chuẩn bị dữ liệu cho Biểu đồ tròn
@@ -169,6 +173,6 @@ export async function GET(req: NextRequest) {
 
   } catch (error: any) {
     console.error("DASHBOARD_ERROR", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: error.message || "Failed to load dashboard data" }, { status: 500 });
   }
 }
