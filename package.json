@@ -94,5 +94,8 @@
     "singleQuote": true,
     "bracketSpacing": false,
     "trailingComma": "none"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
   }
 }

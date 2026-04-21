@@ -43,7 +43,7 @@ export async function GET(req: NextRequest) {
         createdAt: { gte: fromDate, lte: toDate },
         status: { not: "DRAFT" }
       },
-      _sum: { grandTotal: true, taxAmount: true, depositAmount: true },
+      _sum: { grandTotal: true },
       _count: { id: true }
     });
 
@@ -66,11 +66,11 @@ export async function GET(req: NextRequest) {
     });
 
     const salesValue = quoteStats._sum?.grandTotal || 0;
-    const taxes = quoteStats._sum?.taxAmount || 0;
+    const taxes = 0; // taxAmount không tồn tại trong schema
     const labor = productionStats._sum?.totalLaborCost || 0;
     const material = productionStats._sum?.totalMaterialCost || 0;
     const paidByPayments = paymentStats._sum?.amount || 0;
-    const paidByDeposits = quoteStats._sum?.depositAmount || 0;
+    const paidByDeposits = 0; // depositAmount không tồn tại trong schema
     
     // Doanh thu = Tổng nguồn tiền thực nhận về
     const revenue = paidByDeposits + paidByPayments;
@@ -87,7 +87,7 @@ export async function GET(req: NextRequest) {
       }),
       prismadb.quote.findMany({
         where: { orgId, createdAt: { gte: fromDate, lte: toDate } },
-        select: { createdAt: true, depositAmount: true }
+        select: { createdAt: true }
       })
     ]);
 
@@ -99,7 +99,7 @@ export async function GET(req: NextRequest) {
     });
     allDeposits.forEach(d => {
       const dateKey = d.createdAt.toISOString().split("T")[0];
-      cashInMap[dateKey] = (cashInMap[dateKey] || 0) + (d.depositAmount || 0);
+      cashInMap[dateKey] = (cashInMap[dateKey] || 0);
     });
 
     const chartData = Object.keys(cashInMap).sort().map(date => ({

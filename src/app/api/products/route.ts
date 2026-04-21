@@ -21,7 +21,6 @@ export async function GET(req: Request) {
         } : {})
       },
       include: {
-        images: { take: 1 },
         stockBalances: true,
         boms: { include: { material: true } }
       },
@@ -29,11 +28,11 @@ export async function GET(req: Request) {
     });
 
     const items = products.map(p => {
-      const imgUrl = p.images?.[0]?.url || "https://picsum.photos/400/300";
+      const imgUrl = p.images?.[0] || "https://picsum.photos/400/300";
       return {
         ...p,
         image: imgUrl,
-        images: p.images?.length > 0 ? p.images : [{ url: imgUrl }],
+        images: p.images?.length > 0 ? p.images.map(url => ({ url })) : [{ url: imgUrl }],
         stockCount: p.stockBalances?.reduce((acc: number, curr: any) => acc + (curr.qty || 0), 0) || 0,
       };
     });
