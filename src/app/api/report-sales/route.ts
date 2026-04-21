@@ -58,8 +58,8 @@ export async function GET(req: NextRequest) {
       quoteItemModel ? quoteItemModel.groupBy({
         by: ["sku", "nameVi"],
         where: {
-          orgId,
           quote: {
+            orgId,
             createdAt: { gte: dateFrom, lte: dateTo },
             status: { in: ["CONFIRMED", "DONE"] },
           },
