@@ -64,8 +64,7 @@ export async function POST(req: Request) {
       category, 
       inStock, 
       status, 
-      images, 
-      boms 
+      images,
     } = body;
 
     const product = await prismadb.product.create({
@@ -83,23 +82,10 @@ export async function POST(req: Request) {
         category,
         inStock,
         status: status || "PUBLISHED",
-        images: {
-          create: Array.isArray(images) ? images.map((img: any) => ({
-            url: img.url,
-            colorName: img.colorName || "default",
-            colorCode: img.colorCode || "#000000"
-          })) : []
-        },
-        boms: {
-          create: Array.isArray(boms) ? boms.map((b: any) => ({
-            materialId: b.materialId,
-            quantity: parseFloat(b.quantity || 0)
-          })) : []
-        }
+        images: Array.isArray(images) ? images.map((img: any) => typeof img === 'string' ? img : (img.url || "")) : [],
       },
       include: {
-        images: true,
-        boms: true
+        stockBalances: true,
       }
     });
 
