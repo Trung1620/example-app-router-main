@@ -22,7 +22,6 @@ export async function GET(req: Request) {
       },
       include: {
         stockBalances: true,
-        boms: { include: { material: true } }
       },
       orderBy: { createdAt: 'desc' }
     });
