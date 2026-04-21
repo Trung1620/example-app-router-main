@@ -1,0 +1,321 @@
+{
+  "Manifest": {
+    "name": "Seedsbiz ERP",
+    "description": "Handicraft ERP Management System"
+  },
+  "Error": {
+    "description": "<p>We've unfortunately encountered an error.</p><p>You can try to <retry>reload the page</retry> you were visiting.</p>",
+    "title": "Something went wrong!"
+  },
+  "IndexPage": {
+    "description": "This is a basic example that demonstrates the usage of <code>next-intl</code> with the Next.js App Router. Try changing the locale in the top right corner and see how the content changes.",
+    "title": "next-intl example"
+  },
+  "LocaleLayout": {
+    "title": "next-intl example"
+  },
+  "LocaleSwitcher": {
+    "label": "Change language",
+    "locale": "{locale, select, de {🇩🇪 Deutsch} en {🇺🇸 English} other {Unknown}}"
+  },
+  "Manifest": {
+    "name": "next-intl example"
+  },
+  "Navigation": {
+    "home": "Home",
+    "pathnames": "Pathnames"
+  },
+  "NotFoundPage": {
+    "description": "Please double-check the browser address bar or use the navigation to go to a known page.",
+    "title": "Page not found"
+  },
+  "PageLayout": {
+    "links": {
+      "docs": {
+        "description": "Learn more about next-intl in the official docs.",
+        "href": "https://next-intl.dev",
+        "title": "Docs"
+      },
+      "source": {
+        "description": "Browse the source code of this example on GitHub.",
+        "href": "https://github.com/amannn/next-intl/tree/main/examples/example-app-router",
+        "title": "Source code"
+      }
+    }
+  },
+  "PathnamesPage": {
+    "description": "<p>The pathnames are internationalized too.</p><p>If you're using the default language English, you'll see <code>/en/pathnames</code> in the browser address bar on this page.</p><p>If you change the locale to German, the URL is localized accordingly (<code>/de/pfadnamen</code>).</p>",
+    "title": "Pathnames"
+  },
+  "Home": {
+    "noProducts": "No Product",
+    "newCollections": "Sản phẩm mới"
+  },
+  "Nav": {
+    "searchPlaceholder": "Search for handmade products...",
+    "search": "Search",
+    "cart": "Cart",
+    "user": {
+      "login": "Login",
+      "logout": "Logout",
+      "account": "My Account",
+      "orders": "My Orders",
+      "admin": "Admin Panel"
+    },
+    "categories": {
+      "all": "All",
+      "bamboo": "Bamboo",
+      "rattan": "Rattan",
+      "eco": "Eco Friendly",
+      "decor": "Home Decor"
+    },
+    "language": "Language"
+  },
+  "UserMenu": {
+    "orders": "Your Orders",
+    "admin": "Admin Dashboard",
+    "logout": "Logout",
+    "login": "Login",
+    "yourOrders": "Your Orders",
+    "register": "Register"
+  },
+  "Cart": {
+    "empty": "Your cart is empty",
+    "startShopping": "Start Shopping",
+    "title": "Shopping Cart",
+    "product": "PRODUCT",
+    "price": "PRICE",
+    "quantity": "QUANTITY",
+    "total": "TOTAL",
+    "clear": "Clear Cart",
+    "subtotal": "Subtotal",
+    "taxNote": "Taxes and shipping calculated at checkout",
+    "checkout": "Checkout",
+    "loginToCheckout": "Login To Checkout",
+    "continueShopping": "Continue Shopping"
+  },
+  "Auth": {
+    "signupTitle": "Sign up for E~Shop",
+    "continueWithGoogle": "Continue with Google",
+    "name": "Name",
+    "email": "Email",
+    "password": "Password",
+    "signUp": "Sign Up",
+    "login": "Log in",
+    "haveAccount": "Already have an account?",
+    "redirecting": "Logged in. Redirecting...",
+    "accountCreated": "Account created",
+    "loggedIn": "Logged in successfully",
+    "error": "Something went wrong",
+    "loading": "Loading..."
+  },
+  "Login": {
+    "heading": "Sign in to E~Shop",
+    "google": "Continue with Google",
+    "email": "Email",
+    "password": "Password",
+    "login": "Login",
+    "loading": "Loading...",
+    "noAccount": "Don't have an account?",
+    "signup": "Sign Up",
+    "redirecting": "Logged in. Redirecting...",
+    "loginSuccess": "Login successful",
+    "googleError": "googleError"
+  },
+  "Footer": {
+    "shopOnline": "Shop Online",
+    "info": "Information",
+    "about": "About Us",
+    "description": "TrangBamboo - A leading brand/manufacturer of eco-friendly bamboo handicrafts with 15 years of experience. We take pride in offering nature-inspired products rooted in craftsmanship.",
+    "phone": "Phone",
+    "rights": "All rights reserved",
+    "follow": "Follow Us",
+    "contact": "Contact",
+    "shipping-policy": "Shipping Policy",
+    "warranty": "Warranty Policy",
+    "faq": "FAQ",
+    "catalogue": "Download Catalogue"
+  },
+  "Contact": {
+    "heading": "Contact Us",
+    "company": "Company",
+    "address": "Address",
+    "email": "Email",
+    "phone": "Phone",
+    "name": "Full Name",
+    "message": "Your Message",
+    "send": "Send Message",
+    "submitted": "Thank you for contacting us!",
+    "map": "Factory Location Map"
+  },
+  "Dashboard": {
+    "heading": "Admin Dashboard",
+    "summary": "Overview",
+    "addProduct": "Add Product",
+    "manageProducts": "Manage Products",
+    "manageOrders": "Manage Orders",
+    "totalProducts": "Total Products",
+    "totalOrders": "Total Orders",
+    "totalUsers": "Total Users",
+    "recentOrders": "Recent Orders",
+    "loading": "Loading...",
+    "noData": "No data available",
+    "weeklyRevenue": "Weekly Revenue",
+    "sales": "Sales"
+  },
+  "ShippingPolicy": {
+    "title": "Shipping Policy",
+    "intro": "We offer flexible delivery options suitable for both retail and wholesale orders.",
+    "domestic": "For retail orders, we use popular delivery services in Vietnam such as GHTK, GHN, and Viettel Post.",
+    "bulk": "For wholesale orders, we offer shipping by truck, train, or airplane depending on the agreed schedule and cost with the customer."
+  },
+  "Warranty": {
+    "title": "Warranty Policy",
+    "intro": "We offer a 6-month warranty for retail products with manufacturing-related defects. Please note the following conditions:",
+    "warranty1": "The warranty period is valid from the purchase date stated on the invoice.",
+    "warranty2": "Applies only to defects resulting from manufacturing faults or production issues.",
+    "warranty3": "Warranty does not cover mold or mildew caused by improper storage. Handmade products should be kept in a dry, well-ventilated place and away from direct water contact.",
+    "warranty4": "Warranty is void if the product has been modified, misused, or tampered with.",
+    "warranty5": "Customers must provide proof of purchase and clear images of the defective product to process warranty support."
+  },
+  "FAQ": {
+    "title": "Frequently Asked Questions",
+    "questions": [
+      {
+        "question": "Are bamboo baskets durable?",
+        "answer": "Our products are handcrafted from natural materials and can last for years if properly cared for."
+      },
+      {
+        "question": "Can I use bamboo baskets to store food?",
+        "answer": "Yes, though we recommend using a liner or bag to avoid moisture, especially with fresh items."
+      },
+      {
+        "question": "Will the basket develop mold over time?",
+        "answer": "If stored in a damp or poorly ventilated place, mold can develop. Please keep products in a dry, airy environment."
+      },
+      {
+        "question": "Does TrangBamboo accept custom orders?",
+        "answer": "Yes, we accept custom designs, logos, or personalized requests for bulk orders."
+      },
+      {
+        "question": "How long does delivery take?",
+        "answer": "Usually 3–5 days for retail orders. Wholesale shipping times vary based on quantity and delivery location."
+      }
+    ]
+  },
+  "Admin": {
+    "addProduct": "Add Product",
+    "editProduct": "Edit Product",
+    "confirmDelete": "confirm Delete",
+    "productDeleted": "product Deleted",
+    "deleteError": "delete Error",
+    "updatingProduct": "updating Product",
+    "productUpdated": "product Updated",
+    "updateError": "update Error",
+    "delete": "delete",
+    "nameVi": "Name (Vietnamese)",
+    "nameEn": "Name (English)",
+    "descVi": "Description (Vietnamese)",
+    "descEn": "Description (English)",
+    "priceVnd": "Price (VND)",
+    "priceUsd": "Price (USD)",
+    "size": "Size",
+    "brand": "Brand",
+    "inStock": "In Stock",
+    "selectCategory": "Select Category",
+    "selectColorAndImages": "Select Color and Upload Images",
+    "imageRequired": "Please upload at least one image",
+    "categoryRequired": "Please select a category",
+    "creatingProduct": "Creating product...",
+    "productCreated": "Product created successfully",
+    "productCreateError": "Product creation failed",
+    "loading": "Processing...",
+    "saveChanges": "Save changes",
+    "Quotes": {
+      "listTitle": "Quote List",
+      "newQuote": "Create New Quote",
+      "noQuotes": "No quotes found.",
+      "noNumber": "No quote number",
+      "walkInCustomer": "Walk-in customer",
+      "view": "View",
+      "edit": "Edit",
+      "viewPublic": "View Public",
+      "qrAlt": "QR Code for quote"
+    }
+  },
+  "Product": {
+    "noName": "Unnamed product",
+    "reviews": "reviews",
+    "description": "Description",
+    "addToCart": "Add to cart",
+    "noColor": "No color",
+    "noMaterial": "No material",
+    "inStock": "In stock",
+    "outOfStock": "Out of stock",
+    "category": "Category",
+    "brand": "Brand",
+    "size": "Size",
+    "price": "Price",
+    "selectColor": "Select color",
+    "moreImages": "More images",
+    "addedToCart": "Product added to cart",
+    "quantity": "Quantity",
+    "viewCart": "View Cart",
+    "alreadyInCart": "Product already in cart",
+    "noSize": "noSize"
+  },
+  "EditProduct": {
+    "editProduct": "Edit Product",
+    "update": "Update",
+    "loading": "Updating...",
+    "nameVi": "Name (Vietnamese)",
+    "nameEn": "Name (English)",
+    "descVi": "Description (Vietnamese)",
+    "descEn": "Description (English)",
+    "priceVnd": "Price (VND)",
+    "priceUsd": "Price (USD)",
+    "brand": "Brand",
+    "size": "Size",
+    "category": "Category",
+    "inStock": "In Stock",
+    "selectCategory": "Select Category",
+    "selectColorAndImages": "Select Color and Upload Images",
+    "productUpdated": "Product updated successfully!",
+    "productUpdateError": "Failed to update product.",
+    "noProductFound": "No product found",
+    "back": "Back"
+  },
+  "AdminOrders": {
+    "title": "Manage Orders",
+    "orderId": "Order ID",
+    "customer": "Customer",
+    "amount": "Amount",
+    "status": "Status",
+    "deliveryStatus": "Delivery",
+    "createdAt": "Created At",
+    "actions": "Actions",
+    "view": "View",
+    "noOrders": "No orders found.",
+    "paid": "Paid",
+    "pending": "Pending",
+    "delivered": "Delivered",
+    "notDelivered": "Not Delivered",
+    "currency": "Currency",
+    "paymentStatus": "paymentStatus",
+    "date": "date",
+    "completed": "completed",
+    "dispatched": "dispatched",
+    "dispatchedSuccess": "dispatchedSuccess",
+    "error": "error",
+    "deliveredSuccess": "deliveredSuccess"
+  },
+  "Exportedcountries": {
+    "title": "Exported Countries",
+    "japan": "Japan",
+    "usa": "USA",
+    "uk": "United Kingdom",
+    "korea": "Korea",
+    "thailand": "Thailand",
+    "china": "China"
+  }
+}

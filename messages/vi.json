@@ -1,0 +1,292 @@
+{
+  "Manifest": {
+    "name": "Seedsbiz ERP",
+    "description": "Hệ thống quản lý sản xuất mây tre đan"
+  },
+  "Error": {
+    "description": "<p>Rất tiếc, đã xảy ra lỗi.</p><p>Bạn có thể thử <retry>tải lại trang</retry>.</p>",
+    "title": "Đã có lỗi xảy ra!"
+  },
+  "IndexPage": {
+    "description": "Đây là ví dụ về cách sử dụng <code>next-intl</code>. Khi bạn thay đổi ngôn ngữ, nội dung trang sẽ thay đổi theo.",
+    "title": "Ví dụ next-intl"
+  },
+  "LocaleLayout": {
+    "title": "Ví dụ next-intl"
+  },
+  "LocaleSwitcher": {
+    "label": "Thay đổi ngôn ngữ",
+    "locale": "{locale, select, de {🇩🇪 Tiếng Đức} en {🇺🇸 Tiếng Anh} vi {🇻🇳 Tiếng Việt} other {Không xác định}}"
+  },
+  "Navigation": {
+    "home": "Trang chủ",
+    "pathnames": "Đường dẫn"
+  },
+  "NotFoundPage": {
+    "description": "Vui lòng kiểm tra lại đường dẫn hoặc sử dụng thanh điều hướng để tìm trang bạn muốn.",
+    "title": "Trang không tìm thấy"
+  },
+  "PathnamesPage": {
+    "description": "<p>Các đường dẫn cũng được quốc tế hóa.</p>",
+    "title": "Đường dẫn"
+  },
+  "Home": {
+    "noProducts": "Sorry! No products found. Click 'All' to clear filters.",
+    "newCollections": "Sản phẩm mới"
+  },
+  "Nav": {
+    "searchPlaceholder": "Tìm sản phẩm thủ công...",
+    "search": "Tìm kiếm",
+    "cart": "Giỏ hàng",
+    "user": {
+      "login": "Đăng nhập",
+      "logout": "Đăng xuất",
+      "account": "Tài khoản",
+      "orders": "Đơn hàng của tôi",
+      "admin": "Quản trị"
+    },
+    "categories": {
+      "all": "Tất cả",
+      "bamboo": "Tre",
+      "rattan": "Mây",
+      "eco": "Thân thiện môi trường",
+      "decor": "Trang trí nhà"
+    },
+    "language": "Ngôn ngữ"
+  },
+  "UserMenu": {
+    "orders": "Đơn hàng",
+    "admin": "Quản trị",
+    "logout": "Đăng xuất",
+    "login": "Đăng nhập",
+    "yourOrders": "Đơn hàng của bạn",
+    "register": "Đăng ký"
+  },
+  "Cart": {
+    "empty": "Giỏ hàng của bạn trống",
+    "startShopping": "Bắt đầu mua sắm",
+    "title": "Giỏ hàng",
+    "product": "SẢN PHẨM",
+    "price": "GIÁ",
+    "quantity": "SỐ LƯỢNG",
+    "total": "TỔNG",
+    "clear": "Xóa giỏ hàng",
+    "subtotal": "Tạm tính",
+    "taxNote": "Thuế và phí vận chuyển sẽ được tính khi thanh toán",
+    "checkout": "Thanh toán",
+    "loginToCheckout": "Đăng nhập để thanh toán",
+    "continueShopping": "Tiếp tục mua sắm"
+  },
+  "Auth": {
+    "signupTitle": "Đăng ký tài khoản E~Shop",
+    "continueWithGoogle": "Tiếp tục với Google",
+    "name": "Tên",
+    "email": "Email",
+    "password": "Mật khẩu",
+    "signUp": "Đăng ký",
+    "login": "Đăng nhập",
+    "haveAccount": "Bạn đã có tài khoản?",
+    "redirecting": "Đã đăng nhập. Đang chuyển hướng...",
+    "accountCreated": "Tạo tài khoản thành công",
+    "loggedIn": "Đăng nhập thành công",
+    "error": "Đã xảy ra lỗi",
+    "loading": "Đang xử lý..."
+  },
+  "Login": {
+    "heading": "Đăng nhập vào E~Shop",
+    "google": "Tiếp tục với Google",
+    "email": "Email",
+    "password": "Mật khẩu",
+    "login": "Đăng nhập",
+    "loading": "Đang xử lý...",
+    "noAccount": "Chưa có tài khoản?",
+    "signup": "Đăng ký",
+    "redirecting": "Đã đăng nhập. Đang chuyển hướng...",
+    "loginSuccess": "Đăng nhập thành công"
+  },
+  "Footer": {
+    "shopOnline": "Mua Online",
+    "info": "Thông tin chung",
+    "about": "Về Chúng Tôi",
+    "description": "TrangBamboo - Thương hiệu/nhà sản xuất đồ tre mỹ nghệ hàng đầu với 15 năm kinh nghiệm. Chúng tôi tự hào mang đến những sản phẩm thân thiện môi trường, kết hợp tinh hoa nghệ thuật và thiên nhiên.",
+    "phone": "Điện thoại",
+    "rights": "Bản quyền đã được bảo hộ",
+    "follow": "Theo dõi chúng tôi",
+    "contact": "Liên hệ",
+    "shipping-policy": "Chính sách vận chuyển",
+    "warranty": "Chính sách bảo hành",
+    "faq": "Câu hỏi thường gặp",
+    "catalogue": "Tải Catalogue"
+  },
+  "Contact": {
+    "heading": "Liên hệ chúng tôi",
+    "company": "Công ty",
+    "address": "Địa chỉ",
+    "email": "Email",
+    "phone": "Điện thoại",
+    "name": "Họ và tên",
+    "message": "Nội dung liên hệ",
+    "send": "Gửi liên hệ",
+    "submitted": "Cảm ơn bạn đã liên hệ!",
+    "map": "Bản đồ nhà máy"
+  },
+  "Dashboard": {
+    "heading": "Bảng điều khiển quản trị",
+    "summary": "Tổng quan",
+    "addProduct": "Thêm sản phẩm",
+    "manageProducts": "Quản lý sản phẩm",
+    "manageOrders": "Quản lý đơn hàng",
+    "totalProducts": "Tổng số sản phẩm",
+    "totalOrders": "Tổng số đơn hàng",
+    "totalUsers": "Tổng số người dùng",
+    "recentOrders": "Đơn hàng gần đây",
+    "loading": "Đang tải...",
+    "noData": "Không có dữ liệu",
+    "weeklyRevenue": "Doanh thu tuần",
+    "sales": "Doanh số"
+  },
+
+  "ShippingPolicy": {
+    "title": "Chính sách vận chuyển",
+    "intro": "Chúng tôi cung cấp nhiều hình thức giao hàng linh hoạt, phù hợp với nhu cầu của từng đơn hàng.",
+    "domestic": "Với đơn hàng bán lẻ, chúng tôi sử dụng các dịch vụ vận chuyển phổ biến tại Việt Nam như GHTK, GHN, Viettel Post.",
+    "bulk": "Với đơn hàng buôn, chúng tôi vận chuyển bằng xe tải, tàu hỏa hoặc máy bay tùy theo thời gian và chi phí thỏa thuận với khách hàng."
+  },
+  "Warranty": {
+    "title": "Chính sách bảo hành",
+    "intro": "Chúng tôi cam kết bảo hành các sản phẩm bán lẻ trong vòng 6 tháng đối với các lỗi liên quan đến chất lượng do nhà sản xuất. Vui lòng lưu ý các điều khoản sau:",
+    "warranty1": "Thời hạn bảo hành áp dụng từ ngày mua hàng được ghi trên hóa đơn.",
+    "warranty2": "Chỉ áp dụng cho các sản phẩm bị lỗi kỹ thuật hoặc hư hỏng trong quá trình sản xuất.",
+    "warranty3": "Không áp dụng bảo hành cho sản phẩm bị ẩm mốc do bảo quản sai cách (sản phẩm thủ công cần được để nơi khô ráo, tránh tiếp xúc trực tiếp với nước).",
+    "warranty4": "Không bảo hành với sản phẩm đã bị can thiệp, chỉnh sửa hoặc sử dụng sai mục đích.",
+    "warranty5": "Khách hàng vui lòng cung cấp bằng chứng mua hàng và hình ảnh sản phẩm lỗi để được hỗ trợ bảo hành."
+  },
+  "FAQ": {
+    "title": "Câu hỏi thường gặp",
+    "questions": [
+      {
+        "question": "Sản phẩm giỏ tre có bền không?",
+        "answer": "Sản phẩm được đan thủ công từ nguyên liệu tự nhiên, có thể sử dụng trong nhiều năm nếu bảo quản đúng cách."
+      },
+      {
+        "question": "Có thể dùng giỏ tre để đựng thực phẩm không?",
+        "answer": "Có, tuy nhiên bạn nên lót giấy hoặc túi để tránh ẩm mốc, nhất là với thực phẩm tươi sống."
+      },
+      {
+        "question": "Có bị mốc sau thời gian sử dụng không?",
+        "answer": "Nếu để nơi ẩm thấp hoặc không thoáng khí, sản phẩm có thể bị nấm mốc. Vui lòng bảo quản ở nơi khô ráo, thoáng mát."
+      },
+      {
+        "question": "TrangBamboo có nhận đơn hàng theo thiết kế riêng không?",
+        "answer": "Chúng tôi có nhận làm theo mẫu, logo hoặc thiết kế riêng cho đơn hàng số lượng lớn."
+      },
+      {
+        "question": "Thời gian giao hàng là bao lâu?",
+        "answer": "Thông thường từ 3–5 ngày đối với hàng lẻ. Với đơn buôn, thời gian giao phụ thuộc vào số lượng và địa điểm nhận hàng."
+      }
+    ]
+  },
+  "Admin": {
+    "addProduct": "Thêm sản phẩm",
+    "editProduct": "Sửa sản phẩm",
+    "nameVi": "Tên (Tiếng Việt)",
+    "nameEn": "Tên (Tiếng Anh)",
+    "descVi": "Mô tả (Tiếng Việt)",
+    "descEn": "Mô tả (Tiếng Anh)",
+    "priceVnd": "Giá (VNĐ)",
+    "priceUsd": "Giá (USD)",
+    "size": "Kích thước",
+    "brand": "Thương hiệu",
+    "inStock": "Còn hàng",
+    "selectCategory": "Chọn danh mục",
+    "selectColorAndImages": "Chọn màu sắc và tải hình ảnh",
+    "imageRequired": "Vui lòng chọn ít nhất một hình ảnh",
+    "categoryRequired": "Vui lòng chọn danh mục",
+    "creatingProduct": "Đang tạo sản phẩm...",
+    "productCreated": "Tạo sản phẩm thành công",
+    "productCreateError": "Tạo sản phẩm thất bại",
+    "loading": "Đang xử lý...",
+    "saveChanges": "Lưu thay đổi",
+    "Quotes": {
+      "listTitle": "Danh sách báo giá",
+      "newQuote": "Tạo báo giá mới",
+      "noQuotes": "Chưa có báo giá nào.",
+      "noNumber": "Chưa có mã báo giá",
+      "walkInCustomer": "Khách lẻ",
+      "view": "Xem",
+      "edit": "Sửa",
+      "viewPublic": "Xem công khai",
+      "qrAlt": "QR Code cho báo giá"
+    }
+  },
+  "Product": {
+    "noName": "Không có tên",
+    "reviews": "đánh giá",
+    "noSize": "Chưa có kích thước",
+    "noColor": "Chưa có màu",
+    "noMaterial": "Chưa có chất liệu",
+    "description": "Mô tả",
+    "addToCart": "Thêm vào giỏ",
+    "inStock": "Còn hàng",
+    "outOfStock": "Hết hàng",
+    "category": "Danh mục",
+    "brand": "Thương hiệu",
+    "size": "Kích thước",
+    "price": "Giá",
+    "selectColor": "Chọn màu sắc",
+    "moreImages": "Hình ảnh khác",
+    "addedToCart": "Đã thêm vào giỏ",
+    "quantity": "Số lượng",
+    "viewCart": "Xem giỏ hàng",
+    "alreadyInCart": "Sản phẩm đã có trong giỏ"
+  },
+  "EditProduct": {
+    "editProduct": "Chỉnh sửa sản phẩm",
+    "update": "Cập nhật",
+    "loading": "Đang cập nhật...",
+    "nameVi": "Tên (Tiếng Việt)",
+    "nameEn": "Tên (Tiếng Anh)",
+    "descVi": "Mô tả (Tiếng Việt)",
+    "descEn": "Mô tả (Tiếng Anh)",
+    "priceVnd": "Giá (VND)",
+    "priceUsd": "Giá (USD)",
+    "brand": "Thương hiệu",
+    "size": "Kích thước",
+    "category": "Danh mục",
+    "inStock": "Còn hàng",
+    "selectCategory": "Chọn danh mục",
+    "selectColorAndImages": "Chọn màu và tải ảnh",
+    "productUpdated": "Cập nhật sản phẩm thành công!",
+    "productUpdateError": "Cập nhật sản phẩm thất bại.",
+    "noProductFound": "Không tìm thấy sản phẩm",
+    "back": "Quay lại"
+  },
+  "AdminOrders": {
+    "title": "Quản lý đơn hàng",
+    "orderId": "Mã đơn",
+    "customer": "Khách hàng",
+    "amount": "Tổng tiền",
+    "status": "Trạng thái",
+    "deliveryStatus": "Giao hàng",
+    "createdAt": "Ngày tạo",
+    "actions": "Thao tác",
+    "view": "Xem",
+    "noOrders": "Không tìm thấy đơn hàng nào.",
+    "paid": "Đã thanh toán",
+    "pending": "Chờ xử lý",
+    "delivered": "Đã giao",
+    "notDelivered": "Chưa giao",
+    "currency": "Tiền tệ",
+    "paymentStatus": "Tình trạng thanh toán",
+    "date": "Ngày"
+  },
+  "Exportedcountries": {
+    "title": "Các quốc gia đã xuất khẩu",
+    "japan": "Nhật Bản",
+    "usa": "Mỹ",
+    "uk": "Anh",
+    "korea": "Hàn Quốc",
+    "thailand": "Thái Lan",
+    "china": "Trung Quốc"
+  }
+}
