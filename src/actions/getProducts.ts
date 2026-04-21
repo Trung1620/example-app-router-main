@@ -6,6 +6,7 @@ export interface IProductParams {
   searchTerm?: string | null;
   locale?: "vi" | "en";
   take?: number;
+  orgId?: string | null;
 }
 
 // ✅ Type chuẩn theo model Product hiện tại
@@ -15,9 +16,13 @@ export default async function getProducts(
   params: IProductParams
 ): Promise<ProductWithRelations[]> {
   try {
-    const { category, searchTerm, locale = "en", take = 50 } = params;
+    const { category, searchTerm, locale = "en", take = 50, orgId } = params;
 
     const query: any = {};
+
+    if (orgId) {
+      query.orgId = orgId;
+    }
 
     if (category) {
       query.category = {
@@ -41,6 +46,8 @@ export default async function getProducts(
               OR: [
                 { [nameField]: { contains: searchTerm, mode: "insensitive" } },
                 { [descField]: { contains: searchTerm, mode: "insensitive" } },
+                { nameVi: { contains: searchTerm, mode: "insensitive" } },
+                { nameEn: { contains: searchTerm, mode: "insensitive" } },
               ],
             }
           : {}),
@@ -62,11 +69,10 @@ export default async function getProducts(
       ) : [],
     }));
 
-    // ✅ lọc sản phẩm thiếu tên/mô tả theo locale
+    // ✅ lọc sản phẩm - chỉ cần có tên (Vi hoặc En) là hiển thị
     return cleanedProducts.filter((product) => {
-      const hasName = !!product[nameField as keyof Product];
-      const hasDesc = !!product[descField as keyof Product];
-      return Boolean(hasName && hasDesc);
+      const hasName = !!product.nameVi || !!product.nameEn;
+      return hasName;
     });
   } catch (error: any) {
     console.error("❌ Lỗi khi lấy sản phẩm:", error);
