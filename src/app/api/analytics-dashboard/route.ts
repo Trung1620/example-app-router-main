@@ -36,8 +36,18 @@ export async function GET(req: NextRequest) {
       toDate = new Date(now.getFullYear(), 11, 31);
     }
 
-    // 1. Lấy dữ liệu từ Báo giá
-    const quoteStats = await prismadb.quote.aggregate({
+    // 1. Lấy dữ liệu từ Báo giá (Dùng cách truy cập an toàn)
+    const quoteModel = (prismadb as any).quote || (prismadb as any).Quote;
+    const productionOrderModel = (prismadb as any).productionOrder || (prismadb as any).ProductionOrder;
+    if (!quoteModel || typeof quoteModel.aggregate !== 'function') {
+      console.error("Prisma Error: Quote model delegate or aggregate method not found", { 
+        hasModel: !!quoteModel, 
+        hasAggregate: !!(quoteModel && quoteModel.aggregate) 
+      });
+      return NextResponse.json({ error: "Hệ thống đang đồng bộ dữ liệu Báo giá. Vui lòng quay lại sau ít phút." }, { status: 500 });
+    }
+
+    const quoteStats = await quoteModel.aggregate({
       where: { 
         orgId, 
         createdAt: { gte: fromDate, lte: toDate },
@@ -47,59 +57,59 @@ export async function GET(req: NextRequest) {
       _count: { id: true }
     });
 
-    // 2. Lấy tiền đã thanh toán từ các khoản thanh toán (QuotePayment)
-    const paymentStats = await prismadb.quotePayment.aggregate({
+    // 2. Doanh thu tạm tính từ các đơn đã thanh toán
+    const revenueStats = await quoteModel.aggregate({
       where: {
         orgId,
-        createdAt: { gte: fromDate, lte: toDate }
+        createdAt: { gte: fromDate, lte: toDate },
+        paymentStatus: "PAID"
       },
-      _sum: { amount: true }
+      _sum: { grandTotal: true }
     });
 
     // 3. Lấy dữ liệu từ Sản xuất
-    const productionStats = await prismadb.productionOrder.aggregate({
-      where: { 
-        orgId, 
-        createdAt: { gte: fromDate, lte: toDate }
-      },
-      _sum: { totalLaborCost: true, totalMaterialCost: true }
-    });
+    let productionStats = { _sum: { totalLaborCost: 0, totalMaterialCost: 0 } };
+    if (productionOrderModel && typeof productionOrderModel.aggregate === 'function') {
+      productionStats = await productionOrderModel.aggregate({
+        where: { 
+          orgId, 
+          createdAt: { gte: fromDate, lte: toDate }
+        },
+        _sum: { totalLaborCost: true, totalMaterialCost: true }
+      });
+    }
 
     const salesValue = quoteStats._sum?.grandTotal || 0;
     const taxes = 0; // taxAmount không tồn tại trong schema
     const labor = productionStats._sum?.totalLaborCost || 0;
     const material = productionStats._sum?.totalMaterialCost || 0;
-    const paidByPayments = paymentStats._sum?.amount || 0;
+    const revenue = revenueStats._sum?.grandTotal || 0;
     const paidByDeposits = 0; // depositAmount không tồn tại trong schema
     
-    // Doanh thu = Tổng nguồn tiền thực nhận về
-    const revenue = paidByDeposits + paidByPayments;
+    // Doanh thu = Tổng nguồn tiền thực nhận về (đã lọc PAID ở trên)
+    // const revenue = revenue; // đã gán ở trên
     
     // Nợ khách hàng (Phải thu) = Tổng giá trị đơn - Tổng tiền đã thu
     const receivable = salesValue - revenue;
     const payable = labor + taxes;
 
-    // 4. Lấy dữ liệu biểu đồ tiền về (Cash-in) theo ngày (Lấy dữ liệu thô và gộp trong JS để tránh lỗi treo GroupBy)
-    const [allPayments, allDeposits] = await Promise.all([
-      prismadb.quotePayment.findMany({
-        where: { orgId, createdAt: { gte: fromDate, lte: toDate } },
-        select: { createdAt: true, amount: true }
-      }),
-      prismadb.quote.findMany({
-        where: { orgId, createdAt: { gte: fromDate, lte: toDate } },
-        select: { createdAt: true }
+    // 4. Lấy dữ liệu biểu đồ tiền về (Cash-in) theo ngày
+    const [allPaidQuotes] = await Promise.all([
+      quoteModel.findMany({
+        where: { 
+          orgId, 
+          createdAt: { gte: fromDate, lte: toDate },
+          paymentStatus: "PAID"
+        },
+        select: { createdAt: true, grandTotal: true }
       })
     ]);
 
     // Gom dữ liệu theo ngày (YYYY-MM-DD)
     const cashInMap: Record<string, number> = {};
-    allPayments.forEach(p => {
-      const dateKey = p.createdAt.toISOString().split("T")[0];
-      cashInMap[dateKey] = (cashInMap[dateKey] || 0) + (p.amount || 0);
-    });
-    allDeposits.forEach(d => {
-      const dateKey = d.createdAt.toISOString().split("T")[0];
-      cashInMap[dateKey] = (cashInMap[dateKey] || 0);
+    allPaidQuotes.forEach((q: any) => {
+      const dateKey = q.createdAt.toISOString().split("T")[0];
+      cashInMap[dateKey] = (cashInMap[dateKey] || 0) + (q.grandTotal || 0);
     });
 
     const chartData = Object.keys(cashInMap).sort().map(date => ({

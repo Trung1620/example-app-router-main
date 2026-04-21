@@ -80,8 +80,7 @@ export async function POST(req: Request) {
         size,
         brand,
         category,
-        inStock,
-        status: status || "PUBLISHED",
+        status: status || "ACTIVE",
         images: Array.isArray(images) ? images.map((img: any) => typeof img === 'string' ? img : (img.url || "")) : [],
       },
       include: {

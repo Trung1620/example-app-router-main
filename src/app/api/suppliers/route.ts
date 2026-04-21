@@ -34,10 +34,6 @@ export async function POST(req: NextRequest) {
         email,
         address,
         taxId,
-        groupName: groupName || "MATERIAL",
-        status: status || "ACTIVE",
-        note,
-        companyName
       }
     });
     

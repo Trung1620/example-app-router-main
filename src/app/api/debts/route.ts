@@ -30,17 +30,16 @@ export async function GET(req: NextRequest) {
       const pendingQuotes = await prismadb.quote.findMany({
         where: {
           orgId,
-          status: { in: ["ACCEPTED", "CONVERTED", "CONFIRMED"] },
+          status: { in: ["CONFIRMED", "DELIVERING"] },
           paymentStatus: { not: "PAID" },
         },
         include: {
           customer: { select: { name: true } },
-          quotePayments: { select: { amount: true } }
         }
       });
 
       pendingQuotes.forEach(q => {
-        const totalPaid = (q.depositAmount || 0) + q.quotePayments.reduce((sum, p) => sum + p.amount, 0);
+        const totalPaid = q.paymentStatus === "PAID" ? (q.grandTotal || 0) : 0;
         const remaining = (q.grandTotal || 0) - totalPaid;
 
         if (remaining > 100) {
@@ -48,7 +47,7 @@ export async function GET(req: NextRequest) {
             id: `q-${q.id}`,
             type: "RECEIVABLE",
             referenceType: "CUSTOMER",
-            customer: { name: q.customer?.name || q.contactName || "Khách hàng" },
+            customer: { name: q.customer?.name || "Khách hàng" },
             amount: remaining,
             paidAmount: totalPaid,
             dueDate: q.updatedAt.toISOString().split('T')[0],
@@ -66,13 +65,13 @@ export async function GET(req: NextRequest) {
          where: { orgId, status: { not: "CANCELLED" } },
          include: { 
            product: { select: { nameVi: true } },
-           workers: { include: { artisan: { select: { name: true } } } }
+           artisan: { select: { name: true } }
          }
        });
 
        prodOrders.forEach(po => {
          if ((po.totalLaborCost || 0) > 0) {
-           const workerName = po.workers?.[0]?.artisan?.name || "Thợ";
+           const workerName = po.artisan?.name || "Thợ";
            results.push({
              id: `po-${po.id}`,
              type: "PAYABLE",
@@ -80,7 +79,7 @@ export async function GET(req: NextRequest) {
              artisan: { name: workerName },
              amount: po.totalLaborCost,
              paidAmount: 0,
-             dueDate: (po.endDate || po.createdAt).toISOString().split('T')[0],
+             dueDate: (po.actualEndDate || po.expectedEndDate || po.createdAt).toISOString().split('T')[0],
              status: "UNPAID", // Đúng theo DebtStatus enum
              note: `Tiền công: ${po.product?.nameVi || 'SP'} (SL: ${po.quantity})`,
              isAuto: true

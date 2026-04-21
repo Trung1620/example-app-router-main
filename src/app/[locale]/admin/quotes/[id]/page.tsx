@@ -39,7 +39,7 @@ async function deleteDeliveryAction(formData: FormData) {
   if (d.orgId && String(d.orgId) !== String(orgId)) return;
 
   await prismadb.$transaction(async (tx) => {
-    await tx.deliveryItem.deleteMany({ where: { deliveryId } });
+    // DeliveryItem model does not exist in this schema, Delivery has relation to Quote.
     await tx.delivery.delete({ where: { id: deliveryId } });
   });
 
@@ -59,11 +59,10 @@ async function setQuoteStatusAction(formData: FormData) {
 
   const allowed = [
     'DRAFT',
-    'SENT',
-    'ACCEPTED',
-    'REJECTED',
-    'EXPIRED',
-    'CONVERTED'
+    'CONFIRMED',
+    'DELIVERING',
+    'DONE',
+    'CANCELLED'
   ] as const;
 
   if (!quoteId || !(allowed as readonly string[]).includes(status)) return;
@@ -76,66 +75,7 @@ async function setQuoteStatusAction(formData: FormData) {
   revalidatePath(`/${locale}/admin/quotes/${quoteId}`);
 }
 
-/** ✅ Server Action: add payment (QuotePayment) */
-async function addPaymentAction(formData: FormData) {
-  'use server';
-
-  const orgId = await getOrgIdOrThrowServer();
-
-  const quoteId = String(formData.get('quoteId') || '').trim();
-  const locale = String(formData.get('locale') || 'vi').trim();
-
-  const amountRaw = String(formData.get('amount') || '').trim();
-  const currency = String(formData.get('currency') || 'VND').trim();
-  const method = String(formData.get('method') || 'BANK').trim();
-  const refNo = String(formData.get('refNo') || '').trim() || undefined;
-  const note = String(formData.get('note') || '').trim() || undefined;
-  const paidAtRaw = String(formData.get('paidAt') || '').trim();
-
-  const amount = Number(amountRaw);
-  if (!quoteId || !Number.isFinite(amount) || amount <= 0) return;
-
-  // HTML input datetime-local => "2026-01-26T10:30"
-  const paidAt = paidAtRaw ? new Date(paidAtRaw) : new Date();
-
-  await prismadb.quotePayment.create({
-    data: {
-      orgId,
-      quoteId: quoteId as any,
-      amount,
-      currency,
-      method: method as any,
-      refNo,
-      note,
-      paidAt
-    } as any
-  });
-
-  revalidatePath(`/${locale}/admin/quotes/${quoteId}`);
-}
-
-/** ✅ Server Action: delete payment (QuotePayment) */
-async function deletePaymentAction(formData: FormData) {
-  'use server';
-
-  const orgId = await getOrgIdOrThrowServer();
-
-  const paymentId = String(formData.get('paymentId') || '').trim();
-  const quoteId = String(formData.get('quoteId') || '').trim();
-  const locale = String(formData.get('locale') || 'vi').trim();
-
-  if (!paymentId || !quoteId) return;
-
-  const p = await prismadb.quotePayment.findFirst({
-    where: { id: paymentId, orgId, quoteId } as any,
-    select: { id: true }
-  });
-  if (!p) return;
-
-  await prismadb.quotePayment.delete({ where: { id: paymentId } as any });
-
-  revalidatePath(`/${locale}/admin/quotes/${quoteId}`);
-}
+// Removed addPaymentAction and deletePaymentAction because QuotePayment model was removed.
 
 export default async function AdminQuoteViewPage({ params }: Props) {
   const { locale, id } = await params;
@@ -147,8 +87,6 @@ export default async function AdminQuoteViewPage({ params }: Props) {
     include: {
       items: true,
       customer: true,
-      // ✅ đúng schema: Quote.quotePayments
-      quotePayments: { orderBy: { paidAt: 'desc' } }
     }
   });
 
@@ -182,11 +120,10 @@ export default async function AdminQuoteViewPage({ params }: Props) {
   const remaining = Math.max(0, grandTotal - depositAmount);
   const isPaidEnough = depositAmount > 0 && depositAmount >= grandTotal;
 
-  // ✅ tính công nợ theo QuotePayment
-  const payments = (((q as any).quotePayments || []) as any[]) ?? [];
-  const paidTotal = payments.reduce((s, p) => s + Number(p.amount || 0), 0);
-  const remainingByPayments = Math.max(0, grandTotal - paidTotal);
-  const isPaidEnoughByPayments = paidTotal > 0 && paidTotal >= grandTotal;
+  // Tính thanh toán dựa trên paymentStatus
+  const isPaidEnoughByPayments = q.paymentStatus === 'PAID';
+  const paidTotal = isPaidEnoughByPayments ? grandTotal : 0;
+  const remainingByPayments = grandTotal - paidTotal;
 
   const items = (q as any).items || [];
 
@@ -214,11 +151,10 @@ export default async function AdminQuoteViewPage({ params }: Props) {
             className="border rounded-lg px-2 py-2 text-sm bg-white"
           >
             <option value="DRAFT">Draft</option>
-            <option value="SENT">Sent</option>
-            <option value="ACCEPTED">Accepted</option>
-            <option value="REJECTED">Rejected</option>
-            <option value="EXPIRED">Expired</option>
-            <option value="CONVERTED">Converted</option>
+            <option value="CONFIRMED">Confirmed</option>
+            <option value="DELIVERING">Delivering</option>
+            <option value="DONE">Done</option>
+            <option value="CANCELLED">Cancelled</option>
           </select>
           <button className="px-3 py-2 border rounded-lg text-sm">
             Cập nhật
@@ -708,138 +644,7 @@ export default async function AdminQuoteViewPage({ params }: Props) {
             )}
           </div>
 
-          {/* ===================== PAYMENTS / DEBT (MVP) ===================== */}
-          <div className="no-print mt-6 border rounded-xl p-3 text-sm md:col-span-2">
-            <div className="font-semibold">
-              CÔNG NỢ / THANH TOÁN
-              <div className="text-xs font-medium text-gray-600">
-                Lưu lịch sử thu tiền, tự tính đã thu &amp; còn nợ
-              </div>
-            </div>
-
-            {/* Summary */}
-            <div className="mt-3 grid grid-cols-1 md:grid-cols-3 gap-2">
-              <div className="border rounded-lg p-2">
-                <div className="text-xs text-gray-600">Tổng tiền</div>
-                <div className="font-semibold">{money(grandTotal)}</div>
-              </div>
-              <div className="border rounded-lg p-2">
-                <div className="text-xs text-gray-600">Đã thu</div>
-                <div className="font-semibold">{money(paidTotal)}</div>
-              </div>
-              <div className="border rounded-lg p-2">
-                <div className="text-xs text-gray-600">Còn nợ</div>
-                <div className="font-semibold">
-                  {money(remainingByPayments)}
-                </div>
-              </div>
-            </div>
-
-            {isPaidEnoughByPayments && (
-              <div className="mt-2 text-green-700 italic">
-                Đã thu đủ • Paid in full
-              </div>
-            )}
-
-            {/* Add payment */}
-            <form
-              action={addPaymentAction}
-              className="mt-3 grid grid-cols-1 md:grid-cols-5 gap-2"
-            >
-              <input type="hidden" name="quoteId" value={(q as any).id} />
-              <input type="hidden" name="locale" value={locale} />
-              <input
-                type="hidden"
-                name="currency"
-                value={(q as any).currency || 'VND'}
-              />
-
-              <input
-                name="amount"
-                placeholder="Số tiền thu"
-                className="border rounded px-3 py-2 text-sm md:col-span-1"
-                inputMode="decimal"
-                required
-              />
-
-              <select
-                name="method"
-                className="border rounded px-3 py-2 text-sm md:col-span-1"
-                defaultValue="BANK"
-              >
-                <option value="BANK">Chuyển khoản</option>
-                <option value="CASH">Tiền mặt</option>
-                <option value="OTHER">Khác</option>
-              </select>
-
-              <input
-                name="paidAt"
-                type="datetime-local"
-                className="border rounded px-3 py-2 text-sm md:col-span-1"
-              />
-
-              <input
-                name="refNo"
-                placeholder="Mã GD/UNC (tuỳ chọn)"
-                className="border rounded px-3 py-2 text-sm md:col-span-1"
-              />
-
-              <button className="px-3 py-2 border rounded text-sm md:col-span-1">
-                Ghi nhận
-              </button>
-
-              <textarea
-                name="note"
-                placeholder="Ghi chú (tuỳ chọn)"
-                className="border rounded px-3 py-2 text-sm md:col-span-5"
-                rows={2}
-              />
-            </form>
-
-            {/* List payments */}
-            <div className="mt-3">
-              {payments.length === 0 ? (
-                <div className="text-gray-600">Chưa có thanh toán nào.</div>
-              ) : (
-                <div className="space-y-2">
-                  {payments.map((p: any) => (
-                    <div
-                      key={p.id}
-                      className="border rounded-lg px-3 py-2 hover:bg-gray-50 flex items-start justify-between gap-3"
-                    >
-                      <div className="min-w-0">
-                        <div className="font-semibold">
-                          {money(p.amount)} • {String(p.method)}
-                        </div>
-                        <div className="text-xs text-gray-600">
-                          {formatDate(p.paidAt, locale)}
-                          {p.refNo ? ` • Ref: ${p.refNo}` : ''}
-                        </div>
-                        {p.note ? (
-                          <div className="text-xs text-gray-600 mt-1 wrap-break-word whitespace-pre-wrap">
-                            {p.note}
-                          </div>
-                        ) : null}
-                      </div>
-
-                      <form action={deletePaymentAction} className="shrink-0">
-                        <input type="hidden" name="paymentId" value={p.id} />
-                        <input
-                          type="hidden"
-                          name="quoteId"
-                          value={(q as any).id}
-                        />
-                        <input type="hidden" name="locale" value={locale} />
-                        <button className="px-3 py-2 border rounded text-sm">
-                          Xoá
-                        </button>
-                      </form>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
+          {/* ===================== PAYMENTS / DEBT (REMOVED) ===================== */}
         </div>
 
         {/* Sign */}
@@ -974,23 +779,10 @@ function StatusBadge({ status }: { status: string }) {
 
   const map: Record<string, { label: string; cls: string }> = {
     DRAFT: { label: 'Draft', cls: 'bg-gray-100 text-gray-800 border-gray-200' },
-    SENT: { label: 'Sent', cls: 'bg-blue-50 text-blue-700 border-blue-200' },
-    ACCEPTED: {
-      label: 'Accepted',
-      cls: 'bg-green-50 text-green-700 border-green-200'
-    },
-    REJECTED: {
-      label: 'Rejected',
-      cls: 'bg-red-50 text-red-700 border-red-200'
-    },
-    EXPIRED: {
-      label: 'Expired',
-      cls: 'bg-amber-50 text-amber-700 border-amber-200'
-    },
-    CONVERTED: {
-      label: 'Converted',
-      cls: 'bg-purple-50 text-purple-700 border-purple-200'
-    }
+    CONFIRMED: { label: 'Confirmed', cls: 'bg-blue-50 text-blue-700 border-blue-200' },
+    DELIVERING: { label: 'Delivering', cls: 'bg-amber-50 text-amber-700 border-amber-200' },
+    DONE: { label: 'Done', cls: 'bg-green-50 text-green-700 border-green-200' },
+    CANCELLED: { label: 'Cancelled', cls: 'bg-red-50 text-red-700 border-red-200' },
   };
 
   const item = map[s] || {

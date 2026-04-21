@@ -13,7 +13,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     const supplier = await prismadb.supplier.updateMany({
       where: { id, orgId },
       data: {
-        code, name, phone, email, address, taxId, groupName, status, note, companyName
+        code, name, phone, email, address, taxId
       }
     });
     
