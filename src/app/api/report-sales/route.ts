@@ -213,8 +213,8 @@ export async function GET(req: NextRequest) {
       topProducts,
       quotes,
     });
-  } catch (error) {
-    console.error(error);
-    return NextResponse.json({ error: "Failed to fetch sales report" }, { status: 500 });
+  } catch (error: any) {
+    console.error("REPORT_SALES_ERROR", error);
+    return NextResponse.json({ error: error.message || "Failed to fetch sales report" }, { status: 500 });
   }
 }
