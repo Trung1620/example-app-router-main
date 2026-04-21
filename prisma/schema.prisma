@@ -327,6 +327,7 @@ model Material {
 
   stockMoveItems StockMoveItem[] // Lịch sử nhập/xuất vật tư
   stockBalances  StockBalance[] // Số dư tồn kho vật tư
+  productionMaterials ProductionMaterial[] // Lịch sử dùng vật tư trong sản xuất
 
   @@index([orgId])
 }
