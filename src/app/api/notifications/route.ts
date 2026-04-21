@@ -34,6 +34,14 @@ export async function PATCH(req: NextRequest) {
 
       if (!id) return NextResponse.json({ error: "ID is required" }, { status: 400 });
 
+      if (id === "all") {
+        const result = await prismadb.notification.updateMany({
+          where: { orgId, isRead: false },
+          data: { isRead: true },
+        });
+        return NextResponse.json({ ok: true, count: result.count });
+      }
+
       const notification = await prismadb.notification.update({
         where: { id, orgId },
         data: { isRead: true },
