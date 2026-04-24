@@ -4,7 +4,7 @@ import bcrypt from "bcrypt";
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log("🌱 Đang khởi tạo hệ thống dữ liệu (Bản sửa lỗi cấu trúc ảnh)...");
+  console.log("🌱 Đang khởi tạo hệ thống dữ liệu toàn diện cho Kho Mây Tre...");
 
   const passwordAdmin = "123456";
   const hashed = await bcrypt.hash(passwordAdmin, 10);
@@ -42,7 +42,7 @@ async function main() {
   });
 
   // 3. WAREHOUSE
-  await prisma.warehouse.upsert({
+  const warehouse = await prisma.warehouse.upsert({
     where: { orgId_code: { orgId: org.id, code: "KHO_CHINH" } },
     update: {},
     create: {
@@ -52,9 +52,68 @@ async function main() {
     },
   });
 
-  // 4. SAMPLE PRODUCTS
-  console.log("📦 Đang nạp lại 16 sản phẩm...");
-  
+  // 4. SAMPLE SUPPLIERS
+  console.log("🤝 Đang nạp Nhà cung cấp...");
+  const supplier = await prisma.supplier.upsert({
+    where: { code: "NCC_MAY_TRE" },
+    update: {},
+    create: {
+      orgId: org.id,
+      code: "NCC_MAY_TRE",
+      name: "Vật Liệu Mây Tre Phương Nam",
+      phone: "0912345678",
+      address: "Chương Mỹ, Hà Nội",
+    }
+  });
+
+  // 5. SAMPLE MATERIALS
+  console.log("🌾 Đang nạp Nguyên vật liệu...");
+  const materials = [
+    { name: "Mây song loại 1", sku: "MAT-MAY-01", unit: "kg", price: 50000, stock: 500 },
+    { name: "Nan tre 2mm", sku: "MAT-TRE-02", unit: "mét", price: 2000, stock: 1000 },
+    { name: "Sơn bóng PU", sku: "MAT-SON-03", unit: "lít", price: 120000, stock: 50 },
+  ];
+
+  for (const m of materials) {
+    await prisma.material.upsert({
+      where: { sku: m.sku },
+      update: { orgId: org.id, name: m.name, unit: m.unit, price: m.price, stock: m.stock, supplierId: supplier.id },
+      create: { orgId: org.id, sku: m.sku, name: m.name, unit: m.unit, price: m.price, stock: m.stock, supplierId: supplier.id }
+    });
+  }
+
+  // 6. SAMPLE ARTISANS
+  console.log("👨‍🎨 Đang nạp Nghệ nhân...");
+  const artisans = [
+    { code: "THO-001", name: "Nguyễn Văn A", phone: "0987654321", skills: "Đan giỏ, Làm đèn", dailyWage: 250000 },
+    { code: "THO-002", name: "Trần Thị B", phone: "0987654322", skills: "Sơn PU, Hoàn thiện", dailyWage: 220000 },
+  ];
+
+  for (const a of artisans) {
+    await prisma.artisan.upsert({
+      where: { code: a.code },
+      update: { orgId: org.id, name: a.name, phone: a.phone, skills: a.skills, dailyWage: a.dailyWage, status: "ACTIVE" },
+      create: { orgId: org.id, ...a, status: "ACTIVE" }
+    });
+  }
+
+  // 7. SAMPLE CUSTOMERS
+  console.log("👥 Đang nạp Khách hàng...");
+  const customers = [
+    { code: "KH-001", name: "Cửa hàng Lưu niệm Hội An", phone: "0235123456", address: "Trần Phú, Hội An" },
+    { code: "KH-002", name: "Công ty Quà tặng BizGift", phone: "0287654321", address: "Quận 1, TP.HCM" },
+  ];
+
+  for (const c of customers) {
+    await prisma.customer.upsert({
+      where: { code: c.code },
+      update: { orgId: org.id, name: c.name, phone: c.phone, address: c.address },
+      create: { orgId: org.id, ...c }
+    });
+  }
+
+  // 8. SAMPLE PRODUCTS
+  console.log("📦 Đang nạp 16 sản phẩm...");
   const sampleProducts = [
     { nameVi: "Giỏ quà Tết Xưa - Tre đan thủ công", sku: "TB-TET-01", priceVnd: 450000, img: "assets/Picture_Products/222099207565965340910.jpg" },
     { nameVi: "Hộp tre đựng quà Langfarm", sku: "TB-LF-02", priceVnd: 350000, img: "assets/Picture_Products/222099207565965340911.jpg" },
@@ -77,27 +136,12 @@ async function main() {
   for (const p of sampleProducts) {
     await prisma.product.upsert({
       where: { sku: p.sku },
-      update: {
-        orgId: org.id,
-        nameVi: p.nameVi,
-        priceVnd: p.priceVnd,
-        images: [p.img],
-        status: "ACTIVE"
-      },
-      create: {
-        orgId: org.id,
-        nameVi: p.nameVi,
-        sku: p.sku,
-        priceVnd: p.priceVnd,
-        images: [p.img],
-        status: "ACTIVE"
-      }
+      update: { orgId: org.id, nameVi: p.nameVi, priceVnd: p.priceVnd, images: [p.img], status: "ACTIVE", unit: "cái" },
+      create: { orgId: org.id, nameVi: p.nameVi, sku: p.sku, priceVnd: p.priceVnd, images: [p.img], status: "ACTIVE", unit: "cái" }
     });
   }
 
-  console.log("-------------------------------------------");
-  console.log("✅ ĐÃ NẠP THÀNH CÔNG 16 SẢN PHẨM");
-  console.log("-------------------------------------------");
+  console.log("✅ ĐÃ NẠP TOÀN BỘ DỮ LIỆU MẪU");
 }
 
 main()

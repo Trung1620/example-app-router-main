@@ -16,7 +16,8 @@ export async function GET(req: Request) {
         ...(q ? {
           OR: [
             { nameVi: { contains: q, mode: "insensitive" } },
-            { sku: { contains: q, mode: "insensitive" } }
+            { sku: { contains: q, mode: "insensitive" } },
+            { barcode: { contains: q, mode: "insensitive" } }
           ]
         } : {})
       },
