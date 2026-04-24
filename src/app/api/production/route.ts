@@ -86,10 +86,30 @@ export async function POST(req: NextRequest) {
         duration: duration ? parseInt(duration) : undefined,
         startDate: startDate ? new Date(startDate) : undefined,
         expectedEndDate: expectedEndDate ? new Date(expectedEndDate) : undefined,
-        note: notes + (Array.isArray(artisanIds) ? `\nThợ tham gia: ${artisanIds.join(", ")}` : ""),
+        note: notes,
         artisanId: Array.isArray(artisanIds) && artisanIds.length > 0 ? artisanIds[0] : undefined,
       },
     });
+
+    // Tự động tạo Phiếu gia công (JobSheets) nếu có thợ được chọn
+    if (Array.isArray(artisanIds) && artisanIds.length > 0) {
+      for (const artisanId of artisanIds) {
+        await prismadb.jobSheet.create({
+          data: {
+            orgId,
+            orderId: order.id,
+            artisanId,
+            productId,
+            quantity: nQuantity, // Mặc định giao hết cho thợ này (nếu có 1 thợ) hoặc chia đều? 
+            // Ở đây tạm để mặc định là nQuantity cho đơn giản, người dùng có thể sửa sau.
+            unitPrice: nLaborCost,
+            totalAmount: nQuantity * nLaborCost,
+            status: "OPEN",
+            startDate: startDate ? new Date(startDate) : new Date(),
+          }
+        });
+      }
+    }
 
     return NextResponse.json(order);
   } catch (error: any) {
