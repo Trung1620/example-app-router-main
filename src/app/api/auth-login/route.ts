@@ -38,28 +38,34 @@ export async function POST(req: NextRequest) {
         where: { userId: adminUser.id }
       });
 
-      if (!membership) {
-        const defaultOrg = await prismadb.org.create({
-          data: {
-            name: "Kho Mây Tre (Hệ thống)",
-            code: "admin_master",
-          }
-        });
+      try {
+        if (!membership) {
+          const defaultOrg = await prismadb.org.create({
+            data: {
+              name: "Kho Mây Tre (Hệ thống)",
+              code: "admin_master",
+            }
+          });
 
-        await prismadb.orgMember.create({
-          data: {
-            userId: adminUser.id,
-            orgId: defaultOrg.id,
-            role: "OWNER",
-            status: "ACTIVE"
-          } as any
-        });
-      } else if ((membership as any).status !== "ACTIVE") {
-        await prismadb.orgMember.update({
-          where: { id: membership.id },
-          data: { status: "ACTIVE", role: "OWNER" } as any
-        });
+          await prismadb.orgMember.create({
+            data: {
+              userId: adminUser.id,
+              orgId: defaultOrg.id,
+              role: "OWNER",
+              status: "ACTIVE"
+            } as any
+          });
+        } else if ((membership as any).status !== "ACTIVE") {
+          await prismadb.orgMember.update({
+            where: { id: membership.id },
+            data: { status: "ACTIVE", role: "OWNER" } as any
+          });
+        }
+      } catch (adminErr) {
+        console.warn("Could not sync demo admin membership:", adminErr);
+        // Vẫn tiếp tục login vì admin được bypass ở tầng _org.ts
       }
+
 
 
 

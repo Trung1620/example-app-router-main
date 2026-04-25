@@ -9,39 +9,58 @@ function isValidObjectId(id: string) {
 }
 
 export async function getOrgIdForApiOrThrow(req: Request, userId: string) {
-    // Ưu tiên lấy từ header (Dành cho App Mobile)
-    let orgId = req.headers.get("x-org-id");
+    try {
+        // 1. Lấy orgId từ header (Bắt buộc cho App Mobile)
+        let orgId = req.headers.get("x-org-id") || req.headers.get("X-Org-Id");
 
-    // Nếu không có, lấy từ cookie (Dành cho Web)
-    if (!orgId) {
-        const c = await cookies().catch(() => null);
-        orgId = c?.get("active_org_id")?.value || null;
+        // 2. Kiểm tra tính hợp lệ của userId (Tránh crash Prisma MongoDB)
+        if (!userId || !isValidObjectId(userId)) {
+            throw new Error("Invalid or missing userId");
+        }
+
+        // 3. KIỂM TRA QUYỀN ADMIN TỐI CAO (BYPASS SỚM NHẤT)
+        // Lấy thông tin user để check email/role
+        const user = await prismadb.user.findUnique({ 
+            where: { id: userId }, 
+            select: { email: true, role: true } 
+        }).catch(() => null);
+
+        const email = user?.email?.toLowerCase();
+        const isGlobalAdmin = email === "admin@seedbiz.com" || email === "admin@seedsbiz.com" || user?.role === "ADMIN";
+
+        if (isGlobalAdmin) {
+            // Nếu là Admin, dùng orgId từ header nếu có, nếu không thì lấy đại một cái (vì admin xem được hết)
+            return { orgId: orgId || "admin-bypass-org", member: { id: "admin-bypass", role: "ADMIN" } };
+        }
+
+        // 4. KIỂM TRA THÔNG TIN XƯỞNG (CHO USER THƯỜNG)
+        if (!orgId) {
+            throw new Error("Missing x-org-id header");
+        }
+
+        if (!isValidObjectId(orgId)) {
+            throw new Error("Invalid orgId format");
+        }
+
+        const member = await prismadb.orgMember.findUnique({
+            where: { orgId_userId: { orgId, userId } },
+        }).catch((err: any) => {
+            console.error("DB_ORG_MEMBER_ERROR", err);
+            return null;
+        });
+
+        
+        if (!member) throw new Error("Not a member of this organization");
+        
+        const m = member as any;
+        if (m.status && m.status !== "ACTIVE") {
+            throw new Error("Tài khoản đang chờ duyệt hoặc bị khóa");
+        }
+
+        return { orgId, member };
+    } catch (error: any) {
+        console.error("[GET_ORG_ERROR]", error.message);
+        throw error; // Ném tiếp để route catch và trả về 500/403 kèm message
     }
-
-    // Kiểm tra tính hợp lệ của ID trước khi truy vấn Database
-    if (!orgId) {
-        throw new Error("Missing orgId");
-    }
-
-    if (!isValidObjectId(orgId)) {
-        throw new Error("Invalid orgId format");
-    }
-
-    // Tài khoản Admin hệ thống được phép truy cập mọi Org
-    const user = await prismadb.user.findUnique({ where: { id: userId }, select: { email: true } });
-    if (user?.email === "admin@seedsbiz.com") {
-        return { orgId, member: { id: "admin-bypass", role: "ADMIN" } };
-    }
-
-    const member = await prismadb.orgMember.findUnique({
-        where: { orgId_userId: { orgId, userId } },
-        select: { id: true, role: true, status: true } as any,
-    });
-    
-    if (!member) throw new Error("Not a member of this organization");
-    if ((member as any).status !== "ACTIVE") throw new Error("Tài khoản đang chờ duyệt hoặc bị khóa");
-
-
-    return { orgId, member };
-
 }
+

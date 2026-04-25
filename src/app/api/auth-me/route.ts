@@ -32,7 +32,7 @@ export async function GET(req: NextRequest) {
         id: true,
         email: true,
         name: true,
-        image: true,
+        avatar: true, // ✅ Đổi từ image sang avatar
         phone: true,
         role: true,
         bio: true,
@@ -47,15 +47,28 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    return NextResponse.json({ user });
-  } catch (err) {
+    // ✅ FORCE ADMIN FOR DEMO
+    const cleanEmail = user.email?.toLowerCase();
+    if (cleanEmail === "admin@seedbiz.com" || cleanEmail === "admin@seedsbiz.com") {
+      (user as any).role = "ADMIN";
+    }
+
+    return NextResponse.json({ 
+      user: {
+        ...user,
+        image: user.avatar // ✅ Trả về image cho Front-end khớp với code cũ
+      } 
+    });
+
+  } catch (err: any) {
     console.error("[ME_ERROR]", err);
     return NextResponse.json(
-      { error: "Internal Server Error" },
+      { error: "Lỗi hệ thống khi tải hồ sơ: " + (err.message || "Unknown") },
       { status: 500 }
     );
   }
 }
+
 
 export async function PATCH(req: NextRequest) {
   try {
@@ -70,8 +83,14 @@ export async function PATCH(req: NextRequest) {
 
     const updatedUser = await prismadb.user.update({
       where: { id: auth.userId },
-      data: { name, image, phone, bio },
+      data: { 
+        name, 
+        avatar: image, // ✅ Map từ field image của app sang avatar của DB
+        phone, 
+        bio 
+      },
     });
+
 
     return NextResponse.json({
         success: true,
