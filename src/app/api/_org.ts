@@ -35,10 +35,13 @@ export async function getOrgIdForApiOrThrow(req: Request, userId: string) {
 
     const member = await prismadb.orgMember.findUnique({
         where: { orgId_userId: { orgId, userId } },
-        select: { id: true, role: true },
+        select: { id: true, role: true, status: true } as any,
     });
     
     if (!member) throw new Error("Not a member of this organization");
+    if ((member as any).status !== "ACTIVE") throw new Error("Tài khoản đang chờ duyệt hoặc bị khóa");
+
 
     return { orgId, member };
+
 }

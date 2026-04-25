@@ -103,18 +103,26 @@ model User {
   createdExpenses Expense[] @relation("ExpenseCreator") // Các phiếu chi do user này tạo
 }
 
+enum OrgMemberStatus {
+  PENDING
+  ACTIVE
+  BLOCKED
+}
+
 model OrgMember {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId // Mã định danh thành viên xưởng
-  orgId     String   @db.ObjectId // ID xưởng
-  userId    String   @db.ObjectId // ID người dùng
-  role      OrgRole  @default(OWNER) // Vai trò trong xưởng (Chủ xưởng, Admin, Nhân viên)
-  createdAt DateTime @default(now()) // Ngày tham gia xưởng
+  id        String          @id @default(auto()) @map("_id") @db.ObjectId // Mã định danh thành viên xưởng
+  orgId     String          @db.ObjectId // ID xưởng
+  userId    String          @db.ObjectId // ID người dùng
+  role      OrgRole         @default(OWNER) // Vai trò trong xưởng (Chủ xưởng, Admin, Nhân viên)
+  status    OrgMemberStatus @default(ACTIVE) // Trạng thái tham gia (Chờ duyệt, Hoạt động, Bị khóa)
+  createdAt DateTime        @default(now()) // Ngày tham gia xưởng
 
   org  Org  @relation(fields: [orgId], references: [id], onDelete: Cascade)
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([orgId, userId])
 }
+
 
 // ==========================================
 // 2. QUẢN LÝ NGHỆ NHÂN & SẢN XUẤT

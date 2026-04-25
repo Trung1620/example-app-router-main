@@ -79,21 +79,32 @@ export async function GET(req: NextRequest) {
       });
     }
 
+    // 4. Lấy dữ liệu chi phí thủ công (Manual Expenses)
+    const expenseModel = (prismadb as any).expense || (prismadb as any).Expense;
+    let manualExpensesTotal = 0;
+    if (expenseModel && typeof expenseModel.aggregate === 'function') {
+      const manualStats = await expenseModel.aggregate({
+        where: {
+          orgId,
+          expenseDate: { gte: fromDate, lte: toDate }
+        },
+        _sum: { amount: true }
+      });
+      manualExpensesTotal = manualStats._sum?.amount || 0;
+    }
+
     const salesValue = quoteStats._sum?.grandTotal || 0;
     const taxes = 0; // taxAmount không tồn tại trong schema
     const labor = productionStats._sum?.totalLaborCost || 0;
     const material = productionStats._sum?.totalMaterialCost || 0;
     const revenue = revenueStats._sum?.grandTotal || 0;
-    const paidByDeposits = 0; // depositAmount không tồn tại trong schema
-    
-    // Doanh thu = Tổng nguồn tiền thực nhận về (đã lọc PAID ở trên)
-    // const revenue = revenue; // đã gán ở trên
     
     // Nợ khách hàng (Phải thu) = Tổng giá trị đơn - Tổng tiền đã thu
     const receivable = salesValue - revenue;
+    const totalExpenses = labor + material + taxes + manualExpensesTotal;
     const payable = labor + taxes;
 
-    // 4. Lấy dữ liệu biểu đồ tiền về (Cash-in) theo ngày
+    // 5. Lấy dữ liệu biểu đồ tiền về (Cash-in) theo ngày
     const allPaidQuotes = await quoteModel.findMany({
       where: { 
         orgId, 
@@ -121,20 +132,21 @@ export async function GET(req: NextRequest) {
       amount: cashInMap[date]
     }));
 
-    // 5. Tính toán các chi phí "ảo" (từ sản xuất) để hiển thị trong báo cáo chi phí
+    // 6. Tính toán các chi phí "ảo" (từ sản xuất) để hiển thị trong báo cáo chi phí
     const virtualExpenses = [
       { id: 'labor-' + now.getTime(), title: 'Tiền công thợ (SX)', amount: labor, category: 'production', date: toDate, isProduction: true },
       { id: 'material-' + now.getTime(), title: 'Nguyên liệu (SX)', amount: material, category: 'production', date: toDate, isProduction: true },
     ];
 
     // Tính toán tỷ trọng % cho biểu đồ tròn (Xử lý thông minh khi doanh thu = 0)
-    const absProfit = Math.max(0, revenue - labor - material - taxes);
-    const totalForPie = (absProfit + labor + material + taxes) || 1;
+    const absProfit = Math.max(0, revenue - labor - material - taxes - manualExpensesTotal);
+    const totalForPie = (absProfit + labor + material + taxes + manualExpensesTotal) || 1;
     
     const percentages = {
       profit: Math.round((absProfit / totalForPie) * 100) || 0,
       labor: Math.round((labor / totalForPie) * 100) || 0,
       material: Math.round((material / totalForPie) * 100) || 0,
+      manual: Math.round((manualExpensesTotal / totalForPie) * 100) || 0,
       taxes: Math.round((taxes / totalForPie) * 100) || 0,
     };
 
@@ -143,6 +155,7 @@ export async function GET(req: NextRequest) {
       { name: 'Lợi nhuận', amount: absProfit, percentage: percentages.profit, color: '#4CAF50' },
       { name: 'Tiền thợ', amount: labor, percentage: percentages.labor, color: '#FF6B6B' },
       { name: 'Vật tư', amount: material, percentage: percentages.material, color: '#8d7b68' },
+      { name: 'Chi phí khác', amount: manualExpensesTotal, percentage: percentages.manual, color: '#FFB300' },
       { name: 'Thuế', amount: taxes, percentage: percentages.taxes, color: '#78716C' },
     ];
 
@@ -161,8 +174,17 @@ export async function GET(req: NextRequest) {
         labor,
         taxes,
         material,
+        manualExpenses: manualExpensesTotal,
+        expenses: totalExpenses,
+        breakdown: {
+          labor,
+          material,
+          manualExpenses: manualExpensesTotal,
+          shipping: 0, // Placeholder
+          otherProduction: 0 // Placeholder
+        },
         orders: quoteStats._count?.id || 0,
-        profit: revenue - labor - material - taxes,
+        profit: revenue - totalExpenses,
         percentages
       },
       pieData,
@@ -170,6 +192,7 @@ export async function GET(req: NextRequest) {
       virtualExpenses,
       chartData // Trả về số liệu tiền về thực tế theo ngày
     });
+
 
   } catch (error: any) {
     console.error("DASHBOARD_ERROR", error);
