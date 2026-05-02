@@ -39,6 +39,7 @@ export async function GET(req: NextRequest) {
     // 1. Lấy dữ liệu từ Báo giá (Dùng cách truy cập an toàn)
     const quoteModel = (prismadb as any).quote || (prismadb as any).Quote;
     const productionOrderModel = (prismadb as any).productionOrder || (prismadb as any).ProductionOrder;
+    const jobSheetModel = (prismadb as any).jobSheet || (prismadb as any).JobSheet;
     if (!quoteModel || typeof quoteModel.aggregate !== 'function') {
       console.error("Prisma Error: Quote model delegate or aggregate method not found", { 
         hasModel: !!quoteModel, 
@@ -79,6 +80,19 @@ export async function GET(req: NextRequest) {
       });
     }
 
+    // 3.1 Lấy dữ liệu từ Phiếu gia công (Job Sheets) - Tính theo thực tế thợ làm
+    let jobSheetLabor = 0;
+    if (jobSheetModel) {
+      const allJobs = await jobSheetModel.findMany({
+        where: { 
+          orgId,
+          createdAt: { gte: fromDate, lte: toDate }
+        },
+        select: { completedQuantity: true, unitPrice: true }
+      });
+      jobSheetLabor = allJobs.reduce((acc: number, job: any) => acc + ((job.completedQuantity || 0) * (job.unitPrice || 0)), 0);
+    }
+
     // 4. Lấy dữ liệu chi phí thủ công (Manual Expenses)
     const expenseModel = (prismadb as any).expense || (prismadb as any).Expense;
     let manualExpensesTotal = 0;
@@ -95,7 +109,7 @@ export async function GET(req: NextRequest) {
 
     const salesValue = quoteStats._sum?.grandTotal || 0;
     const taxes = 0; // taxAmount không tồn tại trong schema
-    const labor = productionStats._sum?.totalLaborCost || 0;
+    const labor = (productionStats._sum?.totalLaborCost || 0) + jobSheetLabor;
     const material = productionStats._sum?.totalMaterialCost || 0;
     const revenue = revenueStats._sum?.grandTotal || 0;
     
