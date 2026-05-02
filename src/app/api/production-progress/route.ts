@@ -42,18 +42,25 @@ export async function POST(req: NextRequest) {
       include: { artisan: true }
     });
 
-    // 3. Update Artisan Debt (Công nợ)
-    const artisanModel = (prismadb as any).artisan || (prismadb as any).Artisan;
-    if (artisanModel && updatedJob.artisanId) {
+    // 3. Tạo Công nợ (Phải trả thợ)
+    const debtModel = (prismadb as any).debt || (prismadb as any).Debt;
+    if (debtModel && updatedJob.artisanId) {
       const earnAmount = nQuantity * (updatedJob.unitPrice || 0);
-      await artisanModel.update({
-        where: { id: updatedJob.artisanId },
-        data: {
-          debt: {
-            increment: earnAmount
+      if (earnAmount > 0) {
+        await debtModel.create({
+          data: {
+            orgId,
+            type: "PAYABLE",
+            referenceType: "ARTISAN",
+            artisanId: updatedJob.artisanId,
+            amount: earnAmount,
+            paidAmount: 0,
+            dueDate: new Date(),
+            status: "UNPAID",
+            note: `Tiền công gia công SP: ${nQuantity} cái`
           }
-        }
-      });
+        });
+      }
     }
 
     return NextResponse.json({ progress }, { status: 201 });

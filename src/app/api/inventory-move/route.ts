@@ -173,13 +173,22 @@ export async function POST(req: NextRequest) {
         }
 
         if (totalCost > 0) {
-          // Cập nhật công nợ nhà cung cấp
+          // Tạo công nợ nhà cung cấp
           if (supplierId) {
-            const supplierModel = (prismadb as any).supplier || (prismadb as any).Supplier;
-            if (supplierModel) {
-              await supplierModel.update({
-                where: { id: supplierId },
-                data: { debt: { increment: totalCost } }
+            const debtModel = (tx as any).debt || (tx as any).Debt;
+            if (debtModel) {
+              await debtModel.create({
+                data: {
+                  orgId,
+                  type: "PAYABLE",
+                  referenceType: "SUPPLIER",
+                  supplierId: supplierId,
+                  amount: totalCost,
+                  paidAmount: 0,
+                  dueDate: new Date(),
+                  status: "UNPAID",
+                  note: `Công nợ nhập kho: ${materialNames.join(", ") || "Vật tư"}`
+                }
               });
             }
           }

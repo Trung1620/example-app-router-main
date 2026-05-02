@@ -59,52 +59,7 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    // --- 3. TỰ ĐỘNG TÍNH TOÁN NỢ PHẢI TRẢ (Từ số dư công nợ của Thợ và Nhà cung cấp) ---
-    if (!type || type === "payable") {
-       const artisanModel = (prismadb as any).artisan || (prismadb as any).Artisan;
-       if (artisanModel) {
-           const artisansWithDebt = await artisanModel.findMany({
-             where: { orgId, debt: { gt: 0 } },
-             select: { id: true, name: true, debt: true }
-           });
-           artisansWithDebt.forEach((a: any) => {
-             results.push({
-               id: `artisan-debt-${a.id}`,
-               type: "PAYABLE",
-               referenceType: "ARTISAN",
-               artisan: { name: a.name },
-               amount: a.debt,
-               paidAmount: 0,
-               dueDate: new Date().toISOString().split('T')[0], // Nợ hiện tại
-               status: "UNPAID",
-               note: `Tổng công nợ tích lũy của thợ`,
-               isAuto: true
-             });
-           });
-       }
 
-       const supplierModel = (prismadb as any).supplier || (prismadb as any).Supplier;
-       if (supplierModel) {
-           const suppliersWithDebt = await supplierModel.findMany({
-             where: { orgId, debt: { gt: 0 } },
-             select: { id: true, name: true, debt: true }
-           });
-           suppliersWithDebt.forEach((s: any) => {
-             results.push({
-               id: `supplier-debt-${s.id}`,
-               type: "PAYABLE",
-               referenceType: "SUPPLIER",
-               supplier: { name: s.name },
-               amount: s.debt,
-               paidAmount: 0,
-               dueDate: new Date().toISOString().split('T')[0],
-               status: "UNPAID",
-               note: `Tổng công nợ nhập kho vật tư`,
-               isAuto: true
-             });
-           });
-       }
-    }
 
     return NextResponse.json({ debts: results });
   } catch (error: any) {
