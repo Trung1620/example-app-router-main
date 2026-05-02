@@ -145,25 +145,33 @@ export async function POST(req: Request) {
 
       for (const d of deltas) {
         // Cập nhật số dư kho
-        await tx.stockBalance.upsert({
+        // Tìm số dư hiện tại
+        const existingBalance = await tx.stockBalance.findFirst({
           where: {
-            warehouseId_productId_variantId_materialId: {
-              warehouseId: warehouseId,
+            warehouseId,
+            productId: d.productId || null,
+            variantId: d.variantId || null,
+            materialId: d.materialId || null,
+          } as any
+        });
+
+        if (existingBalance) {
+          await tx.stockBalance.update({
+            where: { id: existingBalance.id },
+            data: { qty: { increment: d.delta } }
+          });
+        } else {
+          await tx.stockBalance.create({
+            data: {
+              orgId,
+              warehouseId,
               productId: d.productId || null,
               variantId: d.variantId || null,
               materialId: d.materialId || null,
-            },
-          } as any,
-          update: { orgId, qty: { increment: d.delta } } as any,
-          create: {
-            orgId,
-            warehouseId,
-            productId: d.productId ?? null,
-            variantId: d.variantId ?? null,
-            materialId: d.materialId ?? null,
-            qty: d.delta,
-          } as any,
-        });
+              qty: d.delta,
+            } as any
+          });
+        }
 
         // Nếu là nhập kho (IN), cập nhật luôn giá vốn vào bảng chính
         if (type === "IN" && d.unitCost != null && d.unitCost > 0) {
