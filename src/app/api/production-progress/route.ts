@@ -32,14 +32,29 @@ export async function POST(req: NextRequest) {
     });
 
     // 2. Update JobSheet completedQuantity
-    await jobSheetModel.update({
+    const updatedJob = await jobSheetModel.update({
       where: { id: jobId },
       data: {
         completedQuantity: {
           increment: nQuantity
         }
-      }
+      },
+      include: { artisan: true }
     });
+
+    // 3. Update Artisan Debt (Công nợ)
+    const artisanModel = (prismadb as any).artisan || (prismadb as any).Artisan;
+    if (artisanModel && updatedJob.artisanId) {
+      const earnAmount = nQuantity * (updatedJob.unitPrice || 0);
+      await artisanModel.update({
+        where: { id: updatedJob.artisanId },
+        data: {
+          debt: {
+            increment: earnAmount
+          }
+        }
+      });
+    }
 
     return NextResponse.json({ progress }, { status: 201 });
   } catch (error: any) {
