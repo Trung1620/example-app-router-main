@@ -69,3 +69,16 @@ export async function POST(req: Request) {
 
   return NextResponse.json({ id: created.id });
 }
+
+export async function DELETE(req: Request) {
+  const { orgId } = await requireApiContext(req);
+  const url = new URL(req.url);
+  const id = url.searchParams.get("id");
+  if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
+
+  await prismadb.warehouse.delete({
+    where: { id, orgId } as any,
+  });
+
+  return NextResponse.json({ success: true });
+}
