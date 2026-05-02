@@ -32,6 +32,7 @@ export async function GET(req: NextRequest) {
     const productionOrderModel = (prismadb as any).productionOrder || (prismadb as any).ProductionOrder;
     const progressModel = (prismadb as any).productionProgress || (prismadb as any).ProductionProgress;
     const expenseModel = (prismadb as any).expense || (prismadb as any).Expense;
+    const debtModel = (prismadb as any).debt || (prismadb as any).Debt;
 
     // 1. Tính toán Doanh thu & Phiếu thu (Nguồn tiền vào từ khách)
     const allQuotes = await quoteModel.findMany({
@@ -50,40 +51,44 @@ export async function GET(req: NextRequest) {
         return acc;
     }, 0);
 
-    // 2. Tính toán Chi phí nhân công (Tiền công thợ từ tiến độ thực tế)
-    let jobSheetLabor = 0;
-    if (progressModel) {
-      const allProgress = await progressModel.findMany({
-        where: { 
-          orgId,
-          createdAt: { gte: fromDate, lte: toDate }
-        },
-        include: { job: true }
-      });
-      jobSheetLabor = allProgress.reduce((acc: number, p: any) => acc + ((p.quantity || 0) * (p.job?.unitPrice || 0)), 0);
-    }
-
-    // 3. Tính toán Chi phí vận hành & Vật tư (Từ Phiếu chi thủ công và tự động)
+    // 2. Phân tách Chi phí từ các Phiếu chi thực tế (Cash-basis)
+    let labor = 0;
+    let material = 0;
     let manualExpensesTotal = 0;
-    let materialExpenses = 0;
+
     if (expenseModel) {
       const allExpenses = await expenseModel.findMany({
         where: { orgId, expenseDate: { gte: fromDate, lte: toDate } },
-        select: { amount: true, title: true }
+        select: { amount: true, title: true, category: true }
       });
       allExpenses.forEach((e: any) => {
-        if (e.title && e.title.includes("Nhập kho")) {
-          materialExpenses += (e.amount || 0);
+        const titleLower = e.title?.toLowerCase() || "";
+        if (titleLower.includes("nhập kho") || titleLower.includes("supplier") || e.category === "EQUIPMENT") {
+          material += (e.amount || 0);
+        } else if (titleLower.includes("tiền công gia công") || titleLower.includes("artisan") || e.category === "SALARY") {
+          labor += (e.amount || 0);
         } else {
           manualExpensesTotal += (e.amount || 0);
         }
       });
     }
 
-    const labor = jobSheetLabor;
-    const material = materialExpenses;
     const totalExpenses = labor + material + manualExpensesTotal;
     const revenue = actualReceived; // Coi tiền thực thu là doanh thu ghi nhận (Phiếu thu)
+
+    // 4. Tính toán Công nợ Phải trả (Payable)
+    let payable = 0;
+    if (debtModel) {
+      const allDebts = await debtModel.findMany({
+        where: { 
+          orgId, 
+          type: "PAYABLE", 
+          status: { not: "PAID_OFF" },
+          createdAt: { gte: fromDate, lte: toDate }
+        }
+      });
+      payable = allDebts.reduce((sum: number, d: any) => sum + ((d.amount || 0) - (d.paidAmount || 0)), 0);
+    }
 
     // 4. Biểu đồ Tiền về (Cash-in)
     const cashInMap: Record<string, number> = {};
@@ -102,13 +107,14 @@ export async function GET(req: NextRequest) {
       { name: 'Lợi nhuận', amount: Math.max(0, revenue - totalExpenses), color: '#4CAF50' },
       { name: 'Tiền thợ', amount: labor, color: '#FF6B6B' },
       { name: 'Vật tư/Vận hành', amount: material + manualExpensesTotal, color: '#FFB300' },
-    ];
+    ].map(p => ({ ...p, percentage: Math.round((p.amount / totalForPie) * 100) || 0 }));
 
     return NextResponse.json({
       summary: {
         revenue: salesValue, // Tổng giá trị đơn hàng đã chốt
         actualReceived: actualReceived, // Tổng tiền thực thu (Phiếu thu)
         receivable: salesValue - actualReceived > 0 ? salesValue - actualReceived : 0,
+        payable,
         expenses: totalExpenses,
         profit: actualReceived - totalExpenses,
         labor,
@@ -126,10 +132,7 @@ export async function GET(req: NextRequest) {
       },
       pieData,
       chartData,
-      virtualExpenses: [
-        { id: 'labor-' + now.getTime(), title: 'Tiền công thợ (SX)', amount: labor, category: 'production', date: toDate, isProduction: true },
-        { id: 'ops-' + now.getTime(), title: 'Vận hành & Vật tư', amount: manualExpensesTotal + material, category: 'operating', date: toDate, isProduction: false },
-      ]
+      virtualExpenses: [] // Đã chuyển sang Cash-basis, không cần expense ảo nữa
     });
 
   } catch (error: any) {

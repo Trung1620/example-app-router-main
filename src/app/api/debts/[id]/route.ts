@@ -45,14 +45,47 @@ export async function PATCH(
 
     const body = await req.json();
 
+    const oldDebt = await prismadb.debt.findFirst({
+      where: { id, orgId },
+    });
+
+    if (!oldDebt) {
+      return NextResponse.json({ error: "Debt not found" }, { status: 404 });
+    }
+
+    const newPaidAmount = body.paidAmount !== undefined ? parseFloat(body.paidAmount) : oldDebt.paidAmount;
+    const paidDelta = newPaidAmount - oldDebt.paidAmount;
+
     const debt = await prismadb.debt.update({
       where: { id, orgId },
       data: {
-        paidAmount: body.paidAmount !== undefined ? parseFloat(body.paidAmount) : undefined,
+        paidAmount: newPaidAmount,
         status: body.status,
         note: body.note,
       },
     });
+
+    // Tự động tạo Phiếu chi nếu đây là khoản nợ PHẢI TRẢ và có phát sinh thanh toán mới
+    if (paidDelta > 0 && oldDebt.type === "PAYABLE") {
+      const expenseModel = (prismadb as any).expense || (prismadb as any).Expense;
+      if (expenseModel) {
+        let cat = "OTHER";
+        if (oldDebt.referenceType === "ARTISAN") cat = "SALARY";
+        if (oldDebt.referenceType === "SUPPLIER") cat = "EQUIPMENT";
+
+        await expenseModel.create({
+          data: {
+            orgId,
+            title: `Thanh toán công nợ: ${oldDebt.note || oldDebt.referenceType}`,
+            amount: paidDelta,
+            category: cat,
+            paymentMethod: "CASH",
+            expenseDate: new Date(),
+            note: `Tự động tạo từ việc thanh toán công nợ ${oldDebt.id}`
+          }
+        });
+      }
+    }
 
     return NextResponse.json({ debt });
   } catch (error: any) {

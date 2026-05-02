@@ -193,21 +193,7 @@ export async function POST(req: NextRequest) {
             }
           }
 
-          // Tạo phiếu chi tự động
-          const expenseModel = (prismadb as any).expense || (prismadb as any).Expense;
-          if (expenseModel) {
-            await expenseModel.create({
-              data: {
-                orgId,
-                title: `Nhập kho: ${materialNames.join(", ") || "Vật tư/Sản phẩm"}`,
-                amount: totalCost,
-                category: "EQUIPMENT",
-                paymentMethod: "CASH",
-                expenseDate: new Date(),
-                note: `Phiếu nhập kho tự động. ${note}`
-              }
-            });
-          }
+
         }
       }
 
