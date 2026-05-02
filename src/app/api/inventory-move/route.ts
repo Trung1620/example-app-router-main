@@ -1,6 +1,6 @@
 // src/app/api/inventory-move/route.ts
 import prismadb from "@/libs/prismadb";
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import { requireApiContext } from "@/app/api/_auth";
 
 export const dynamic = "force-dynamic";
@@ -8,9 +8,9 @@ export const dynamic = "force-dynamic";
 type MoveType = "IN" | "OUT" | "ADJUST";
 
 type InputItem = {
-  productId: string | null;
-  variantId: string | null;
-  materialId: string | null;
+  productId: string | undefined;
+  variantId: string | undefined;
+  materialId: string | undefined;
   qty: number;
   unitCost?: number;
   note?: string;
@@ -19,6 +19,7 @@ type InputItem = {
 interface StockMoveRequestBody {
   warehouseId: string;
   type: MoveType;
+  supplierId?: string;
   note?: string;
   items: Array<{
     productId?: string;
@@ -34,94 +35,69 @@ function keyOf(it: { productId?: string; variantId?: string; materialId?: string
   return `${it.productId || "null"}::${it.variantId || "null"}::${it.materialId || "null"}`;
 }
 
-export async function POST(req: Request) {
-  const { orgId } = await requireApiContext(req);
-
-  const body: Partial<StockMoveRequestBody> = await req.json().catch(() => ({}));
-  const warehouseId = String(body?.warehouseId || "").trim();
-  const type = String(body?.type || "IN").trim() as MoveType;
-  const note = String(body?.note || "").trim();
-
-  if (!warehouseId) return NextResponse.json({ error: "Missing warehouseId" }, { status: 400 });
-  if (!["IN", "OUT", "ADJUST"].includes(type)) {
-    return NextResponse.json({ error: "Invalid type" }, { status: 400 });
-  }
-
-  const rawItems = Array.isArray(body?.items) ? body.items : [];
-  if (rawItems.length === 0) return NextResponse.json({ error: "Missing items" }, { status: 400 });
-
-  const items: InputItem[] = rawItems
-    .map((x) => ({
-      productId: (x?.productId && x.productId !== 'null') ? String(x.productId).trim() : null,
-      variantId: (x?.variantId && x.variantId !== 'null') ? String(x.variantId).trim() : null,
-      materialId: (x?.materialId && x.materialId !== 'null') ? String(x.materialId).trim() : null,
-      qty: Number(x?.qty) || 0,
-      unitCost: x?.unitCost != null ? Number(x.unitCost) : undefined,
-      note: x?.note ? String(x.note).trim() : undefined,
-    }))
-    .filter((x) => (x.productId || x.variantId || x.materialId) && x.qty !== 0);
-
-  if (items.length === 0) {
-    return NextResponse.json({ error: "Items invalid (need qty and product/variant/material)" }, { status: 400 });
-  }
-
-  const wh = await prismadb.warehouse.findFirst({
-    where: { id: warehouseId, orgId } as any,
-    select: { id: true },
-  });
-  if (!wh) return NextResponse.json({ error: "Warehouse not found" }, { status: 404 });
-
-  const deltas = items.map((it) => {
-    const abs = Math.abs(it.qty);
-    const delta = type === "IN" ? abs : type === "OUT" ? -abs : it.qty;
-    return { ...it, delta };
-  });
-
-  const ENFORCE_NO_NEGATIVE = true;
-
+export async function POST(req: NextRequest) {
   try {
+    const { orgId } = await requireApiContext(req);
+    const body: Partial<StockMoveRequestBody> = await req.json().catch(() => ({}));
+
+    const warehouseId = String(body?.warehouseId || "").trim();
+    const type = String(body?.type || "IN").trim() as MoveType;
+    const supplierId = body?.supplierId ? String(body.supplierId).trim() : null;
+    const note = String(body?.note || "").trim();
+
+    if (!warehouseId) return NextResponse.json({ error: "Missing warehouseId" }, { status: 400 });
+    if (!["IN", "OUT", "ADJUST"].includes(type)) {
+      return NextResponse.json({ error: "Invalid type" }, { status: 400 });
+    }
+
+    const rawItems = Array.isArray(body?.items) ? body.items : [];
+    if (rawItems.length === 0) return NextResponse.json({ error: "Missing items" }, { status: 400 });
+
+    const items: InputItem[] = rawItems
+      .map((x) => ({
+        productId: (x?.productId && x.productId !== 'null') ? String(x.productId).trim() : undefined,
+        variantId: (x?.variantId && x.variantId !== 'null') ? String(x.variantId).trim() : undefined,
+        materialId: (x?.materialId && x.materialId !== 'null') ? String(x.materialId).trim() : undefined,
+        qty: Number(x?.qty) || 0,
+        unitCost: x?.unitCost != null ? Number(x.unitCost) : undefined,
+        note: x?.note ? String(x.note).trim() : undefined,
+      }))
+      .filter((x) => (x.productId || x.variantId || x.materialId) && x.qty !== 0);
+
+    if (items.length === 0) {
+      return NextResponse.json({ error: "Items invalid" }, { status: 400 });
+    }
+
+    const wh = await prismadb.warehouse.findFirst({
+      where: { id: warehouseId, orgId } as any,
+    });
+    if (!wh) return NextResponse.json({ error: "Warehouse not found" }, { status: 404 });
+
+    const deltas = items.map((it) => {
+      const abs = Math.abs(it.qty);
+      const delta = type === "IN" ? abs : type === "OUT" ? -abs : it.qty;
+      return { ...it, delta };
+    });
+
     const result = await prismadb.$transaction(async (tx) => {
-      if (ENFORCE_NO_NEGATIVE && type === "OUT") {
-        const keysForBalance = deltas.map((d) => ({ 
-          productId: d.productId ?? null, 
-          variantId: d.variantId ?? null,
-          materialId: d.materialId ?? null
-        }));
-
-        const balances = await tx.stockBalance.findMany({
-          where: {
-            orgId,
-            warehouseId,
-            OR: keysForBalance.map((k) => ({
-              productId: k.productId,
-              variantId: k.variantId,
-              materialId: k.materialId,
-            })),
-          } as any,
-          select: { productId: true, variantId: true, materialId: true, qty: true },
-        });
-
-        const map = new Map<string, number>(
-          balances.map((b) => [keyOf({ 
-            productId: b.productId ?? undefined, 
-            variantId: b.variantId ?? undefined,
-            materialId: b.materialId ?? undefined 
-          }), b.qty])
-        );
-
-        const notEnough = deltas
-          .map((d) => {
-            const cur = map.get(keyOf(d)) ?? 0;
-            const after = cur + d.delta;
-            return { productId: d.productId, variantId: d.variantId, materialId: d.materialId, cur, after };
-          })
-          .filter((x) => x.after < 0);
-
-        if (notEnough.length > 0) {
-          return { error: "Not enough stock", details: notEnough } as const;
+      // 1. Kiểm tra tồn kho nếu là xuất kho (OUT)
+      if (type === "OUT") {
+        for (const d of deltas) {
+          const balance = await tx.stockBalance.findFirst({
+            where: {
+              orgId,
+              warehouseId,
+              productId: d.productId || null,
+              materialId: d.materialId || null,
+            } as any
+          });
+          if (!balance || balance.qty < Math.abs(d.delta)) {
+            throw new Error(`Không đủ tồn kho cho mặt hàng: ${d.productId || d.materialId}`);
+          }
         }
       }
 
+      // 2. Tạo phiếu kho (StockMove)
       const created = await tx.stockMove.create({
         data: {
           orgId,
@@ -132,7 +108,6 @@ export async function POST(req: Request) {
             create: deltas.map((d) => ({
               orgId,
               productId: d.productId || undefined,
-              variantId: d.variantId || undefined,
               materialId: d.materialId || undefined,
               qty: d.delta,
               unitCost: d.unitCost,
@@ -140,17 +115,14 @@ export async function POST(req: Request) {
             })),
           },
         } as any,
-        include: { items: true },
       });
 
+      // 3. Cập nhật số dư kho (StockBalance) và Giá vốn
       for (const d of deltas) {
-        // Cập nhật số dư kho
-        // Tìm số dư hiện tại
         const existingBalance = await tx.stockBalance.findFirst({
           where: {
             warehouseId,
             productId: d.productId || null,
-            variantId: d.variantId || null,
             materialId: d.materialId || null,
           } as any
         });
@@ -166,66 +138,105 @@ export async function POST(req: Request) {
               orgId,
               warehouseId,
               productId: d.productId || null,
-              variantId: d.variantId || null,
               materialId: d.materialId || null,
               qty: d.delta,
             } as any
           });
         }
 
-        // Nếu là nhập kho (IN), cập nhật luôn giá vốn vào bảng chính
-        if (type === "IN" && d.unitCost != null && d.unitCost > 0) {
+        // Cập nhật giá vốn nếu nhập hàng
+        if (type === "IN" && (d.unitCost || 0) > 0) {
           if (d.materialId) {
             await tx.material.update({
               where: { id: d.materialId },
-              data: { price: d.unitCost, stock: { increment: d.delta } },
-            });
-          } else if (d.variantId) {
-            await tx.productVariant.update({
-              where: { id: d.variantId },
-              data: { costPriceVnd: d.unitCost },
+              data: { price: d.unitCost, stock: { increment: d.delta } }
             });
           } else if (d.productId) {
             await tx.product.update({
               where: { id: d.productId },
-              data: { costPriceVnd: d.unitCost },
+              data: { costPriceVnd: d.unitCost }
             });
           }
-        } else if (d.materialId) {
-          // Chỉ cập nhật tồn kho tổng trong bảng Material
-          await tx.material.update({
-            where: { id: d.materialId },
-            data: { stock: { increment: d.delta } },
-          });
         }
       }
 
-      return { id: created.id } as const;
+      // 4. Xử lý tài chính (Công nợ & Phiếu chi)
+      if (type === "IN") {
+        let totalCost = 0;
+        let materialNames: string[] = [];
+        for (const d of deltas) {
+          totalCost += (d.delta * (d.unitCost || 0));
+          if (d.materialId) {
+             const mat = await tx.material.findUnique({ where: { id: d.materialId } });
+             if (mat) materialNames.push(mat.name);
+          }
+        }
+
+        if (totalCost > 0) {
+          // Cập nhật công nợ nhà cung cấp
+          if (supplierId) {
+            const supplierModel = (prismadb as any).supplier || (prismadb as any).Supplier;
+            if (supplierModel) {
+              await supplierModel.update({
+                where: { id: supplierId },
+                data: { debt: { increment: totalCost } }
+              });
+            }
+          }
+
+          // Tạo phiếu chi tự động
+          const expenseModel = (prismadb as any).expense || (prismadb as any).Expense;
+          if (expenseModel) {
+            await expenseModel.create({
+              data: {
+                orgId,
+                title: `Nhập kho: ${materialNames.join(", ") || "Vật tư/Sản phẩm"}`,
+                amount: totalCost,
+                category: "EQUIPMENT",
+                paymentMethod: "CASH",
+                expenseDate: new Date(),
+                note: `Phiếu nhập kho tự động. ${note}`
+              }
+            });
+          }
+        }
+      }
+
+      return created;
     });
 
-    if ((result as any)?.error) return NextResponse.json(result, { status: 400 });
     return NextResponse.json(result);
-  } catch (e: any) {
-    return NextResponse.json({ error: e?.message || "Create stock move failed" }, { status: 500 });
+  } catch (error: any) {
+    console.error("[INVENTORY_MOVE_POST]", error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
 
-export async function GET(req: Request) {
-  const { orgId } = await requireApiContext(req);
-  const url = new URL(req.url);
-  const warehouseId = url.searchParams.get("warehouseId")?.trim();
+export async function GET(req: NextRequest) {
+  try {
+    const { orgId } = await requireApiContext(req);
+    const { searchParams } = new URL(req.url);
+    const warehouseId = searchParams.get("warehouseId");
 
-  const where: any = { orgId };
-  if (warehouseId) where.warehouseId = warehouseId;
+    const where: any = { orgId };
+    if (warehouseId) where.warehouseId = warehouseId;
 
-  const rows = await prismadb.stockMove.findMany({
-    where,
-    orderBy: { createdAt: "desc" },
-    include: {
-      warehouse: true,
-      items: { include: { product: true, variant: true } },
-    },
-  });
+    const rows = await prismadb.stockMove.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+      include: {
+        warehouse: true,
+        items: {
+          include: {
+            product: { select: { nameVi: true, sku: true } },
+            material: { select: { name: true, sku: true } }
+          }
+        }
+      }
+    });
 
-  return NextResponse.json({ rows });
+    return NextResponse.json({ rows });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
 }
