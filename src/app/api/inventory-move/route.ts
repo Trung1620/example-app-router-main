@@ -8,9 +8,9 @@ export const dynamic = "force-dynamic";
 type MoveType = "IN" | "OUT" | "ADJUST";
 
 type InputItem = {
-  productId?: string;
-  variantId?: string;
-  materialId?: string;
+  productId: string | null;
+  variantId: string | null;
+  materialId: string | null;
   qty: number;
   unitCost?: number;
   note?: string;
@@ -52,9 +52,9 @@ export async function POST(req: Request) {
 
   const items: InputItem[] = rawItems
     .map((x) => ({
-      productId: x?.productId ? String(x.productId).trim() : undefined,
-      variantId: x?.variantId ? String(x.variantId).trim() : undefined,
-      materialId: x?.materialId ? String(x.materialId).trim() : undefined,
+      productId: (x?.productId && x.productId !== 'null') ? String(x.productId).trim() : null,
+      variantId: (x?.variantId && x.variantId !== 'null') ? String(x.variantId).trim() : null,
+      materialId: (x?.materialId && x.materialId !== 'null') ? String(x.materialId).trim() : null,
       qty: Number(x?.qty) || 0,
       unitCost: x?.unitCost != null ? Number(x.unitCost) : undefined,
       note: x?.note ? String(x.note).trim() : undefined,
@@ -148,10 +148,10 @@ export async function POST(req: Request) {
         await tx.stockBalance.upsert({
           where: {
             warehouseId_productId_variantId_materialId: {
-              warehouseId,
-              productId: d.productId ?? null,
-              variantId: d.variantId ?? null,
-              materialId: d.materialId ?? null,
+              warehouseId: warehouseId,
+              productId: d.productId || null,
+              variantId: d.variantId || null,
+              materialId: d.materialId || null,
             },
           } as any,
           update: { orgId, qty: { increment: d.delta } } as any,
