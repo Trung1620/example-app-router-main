@@ -5,17 +5,27 @@ export const dynamic = "force-dynamic";
 
 export async function GET(req: Request) {
   try {
-    // 1. Lấy tất cả sản phẩm để xử lý trong Javascript (tránh lỗi query trực tiếp vào DB)
-    const allProducts = await prismadb.product.findMany();
+    // 1. Tìm sản phẩm "h" mà bạn vừa tạo để lấy đúng OrgId hiện tại
+    const sampleProduct = await prismadb.product.findFirst({
+      where: { 
+        OR: [
+            { nameVi: "h" },
+            { nameVi: "H" },
+            { nameVi: "TEST" },
+            { nameVi: "test" }
+        ]
+      },
+      orderBy: { createdAt: 'desc' }
+    });
 
-    // 2. Tìm một sản phẩm bất kỳ đã có OrgId hợp lệ (không phải rỗng)
-    const validProduct = allProducts.find(p => p.orgId && p.orgId.length > 5);
-
-    if (!validProduct) {
-      return NextResponse.json({ error: "Không tìm thấy xưởng nào. Hãy tạo mới 1 sản phẩm trên App trước." });
+    if (!sampleProduct) {
+      return NextResponse.json({ error: "Vẫn chưa tìm thấy sản phẩm 'h' hoặc 'TEST'. Vui lòng tạo mới 1 sản phẩm trên App trước." });
     }
 
-    const targetOrgId = validProduct.orgId;
+    const targetOrgId = sampleProduct.orgId;
+
+    // 2. Lấy tất cả các sản phẩm khác (tổng cộng 18 cái) và gom về OrgId này
+    const allProducts = await prismadb.product.findMany();
 
     const cloudinaryUrls = [
       "https://res.cloudinary.com/dgvlkztox/image/upload/v1777796703/seedsbiz/products/123969957078958096612.jpg",
@@ -42,12 +52,12 @@ export async function GET(req: Request) {
       "https://res.cloudinary.com/dgvlkztox/image/upload/v1777796729/seedsbiz/products/5338872726882766912.jpg"
     ];
 
-    // 3. Cập nhật tất cả sản phẩm về chung OrgId này
     let updateCount = 0;
     for (let i = 0; i < allProducts.length; i++) {
       const p = allProducts[i];
       const imageUrl = cloudinaryUrls[i % cloudinaryUrls.length];
       
+      // Chỉ cập nhật OrgId cho những sản phẩm chưa nằm trong Org này
       await prismadb.product.update({
         where: { id: p.id },
         data: { 
@@ -59,11 +69,11 @@ export async function GET(req: Request) {
     }
 
     return NextResponse.json({
-      message: `Đã dọn dẹp và gom ${updateCount} sản phẩm về xưởng của bạn!`,
+      message: `THÀNH CÔNG! Đã lôi toàn bộ ${updateCount} sản phẩm về xưởng hiện tại của bạn.`,
       orgId: targetOrgId
     });
   } catch (error: any) {
-    console.error("[SYNC_ERROR]", error);
+    console.error("[FINAL_SYNC_ERROR]", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
