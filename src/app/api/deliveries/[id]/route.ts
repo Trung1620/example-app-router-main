@@ -36,7 +36,7 @@ export async function PATCH(req: NextRequest, { params }: Ctx) {
     const { 
       number, carrier, vehicleType, carrierType, 
       vehicleNumber, trackingNumber,
-      receiverName, receiverPhone, driverName, driverPhone, 
+      receiverName, receiverPhone, customerId, driverName, driverPhone, 
       shippingCost, note, image, status 
     } = body;
 
@@ -53,20 +53,21 @@ export async function PATCH(req: NextRequest, { params }: Ctx) {
     const updated = await prismadb.delivery.update({
       where: { id },
       data: {
-        ...(number && { number }),
-        ...(carrier && { carrier }),
-        ...(vehicleType && { vehicleType }),
-        ...(carrierType && { carrierType }),
+        ...(number !== undefined && { number }),
+        ...(carrier !== undefined && { carrier }),
+        ...(vehicleType !== undefined && { vehicleType }),
+        ...(carrierType !== undefined && { carrierType }),
         ...(vehicleNumber !== undefined && { vehicleNumber }),
         ...(trackingNumber !== undefined && { trackingNumber }),
-        ...(receiverName && { receiverName }),
+        ...(receiverName !== undefined && { receiverName }),
         ...(receiverPhone !== undefined && { receiverPhone }),
+        ...(customerId !== undefined && { customerId }),
         ...(driverName !== undefined && { driverName }),
         ...(driverPhone !== undefined && { driverPhone }),
         ...(shippingCost !== undefined && { shippingCost: parseFloat(shippingCost) || 0 }),
         ...(note !== undefined && { note }),
         ...(image !== undefined && { image }),
-        ...(status && { status }),
+        ...(status !== undefined && { status }),
       } as any
     });
 

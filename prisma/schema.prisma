@@ -569,6 +569,7 @@ model Customer {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   warranties      Warranty[] // Lịch sử bảo hành & sửa chữa
+  deliveries      Delivery[] // Lịch sử giao hàng
 }
 
 enum QuoteStatus {
@@ -655,6 +656,12 @@ model Delivery {
   quoteId String @db.ObjectId // Giao cho đơn hàng nào
   quote   Quote  @relation(fields: [quoteId], references: [id], onDelete: Cascade)
 
+  receiverName   String? // Tên người nhận
+  receiverPhone  String? // Số điện thoại người nhận
+  
+  customerId     String?        @db.ObjectId // Giao cho khách hàng nào
+  customer       Customer?      @relation(fields: [customerId], references: [id])
+
   carrier        String? // Đơn vị vận chuyển (Viettel, GHTK, Xe nhà...)
   vehicleType    String? // Loại xe (Xe tải, xe khách, xe máy...)
   vehicleNumber  String? // Biển số xe giao hàng
@@ -663,6 +670,8 @@ model Delivery {
   trackingNumber String? // Mã vận đơn (tra cứu hành trình)
   shippingCost   Float? // Chi phí thực tế phải trả cho nhà xe
   receiptImage   String? // Ảnh phiếu ký nhận/biên bản giao hàng
+  image          String? // Ảnh bổ sung
+  note           String? // Ghi chú giao hàng
   status         DeliveryStatus @default(PENDING) // Trạng thái: Chờ (PENDING), Đã lấy hàng (PICKED_UP), Đã giao (DELIVERED)
   
   warehouseId String?        @db.ObjectId // Xuất hàng từ kho nào

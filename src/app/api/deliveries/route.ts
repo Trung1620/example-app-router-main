@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
     const { 
       number, carrier, vehicleType, carrierType, 
       vehicleNumber, trackingNumber,
-      receiverName, receiverPhone, 
+      receiverName, receiverPhone, customerId,
       driverName, driverPhone, 
       shippingCost, note, image, status 
     } = body;
@@ -37,19 +37,20 @@ export async function POST(req: NextRequest) {
       data: {
         orgId,
         number: number || `DN-${Math.floor(Date.now() / 1000)}`,
-        carrier,
-        vehicleType,
-        carrierType,
+        carrier: carrier || null,
+        vehicleType: vehicleType || "motorcycle",
+        carrierType: carrierType || "ghtk",
         vehicleNumber: vehicleNumber || null,
         trackingNumber: trackingNumber || null,
-        receiverName,
-        receiverPhone,
-        driverName,
-        driverPhone,
+        receiverName: receiverName || null,
+        receiverPhone: receiverPhone || null,
+        customerId: customerId || null,
+        driverName: driverName || null,
+        driverPhone: driverPhone || null,
         shippingCost: parseFloat(shippingCost || 0),
-        note,
-        image,
-        status: (status as any) || "PENDING", // Enum: PENDING | PICKED_UP | DELIVERED
+        note: note || null,
+        image: image || null,
+        status: (status as any) || "PENDING",
         ...(body.quoteId ? { quoteId: body.quoteId } : {})
       } as any
     });
