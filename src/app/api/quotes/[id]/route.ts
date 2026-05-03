@@ -84,7 +84,7 @@ const PatchBody = z.object({
   notesVi: optionalString,
   notesEn: optionalString,
   status: z
-    .enum(["DRAFT", "SENT", "ACCEPTED", "REJECTED", "EXPIRED", "CONVERTED"])
+    .enum(["DRAFT", "SENT", "ACCEPTED", "REJECTED", "EXPIRED", "CONVERTED", "CONFIRMED", "DELIVERING", "DONE"])
     .optional(),
 });
 
@@ -168,10 +168,10 @@ export async function PATCH(
       );
     }
 
-    const current = await prismadb.quote.findFirst({
+    const current = (await prismadb.quote.findFirst({
       where: { id, orgId },
       include: { items: true },
-    });
+    })) as any;
 
     if (!current) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -263,7 +263,7 @@ export async function PATCH(
           })),
         },
         status: body.status ?? current.status,
-      },
+      } as any,
       include: { items: true },
     });
 

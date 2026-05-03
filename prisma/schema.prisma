@@ -574,6 +574,11 @@ model Customer {
 
 enum QuoteStatus {
   DRAFT
+  SENT
+  ACCEPTED
+  REJECTED
+  EXPIRED
+  CONVERTED
   CONFIRMED
   DELIVERING
   DONE
