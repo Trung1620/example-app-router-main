@@ -123,22 +123,32 @@ export async function POST(req: NextRequest) {
         create: data.items.map((it) => ({
           sku: it.sku ?? '',
           nameVi: it.nameVi,
+          nameEn: it.nameEn ?? '',
           size: it.size,
+          unit: it.unit,
           quantity: it.quantity,
           unitPrice: it.unitPrice,
           lineTotal: it.unitPrice * it.quantity,
+          note: it.note,
+          imageUrl: it.imageUrl,
           productId: it.productId,
           variantId: it.variantId,
         }))
       },
 
       subTotal: sub,
-      discount: discountAmount || data.discountAmount || 0,
+      discountPercent: data.discountPercent ?? 0,
+      discountAmount: discountAmount || data.discountAmount || 0,
+      taxPercent: 0,
+      taxAmount: 0,
+      householdTaxPercent: 0,
+      householdTaxAmount: 0,
       shippingFee: data.shippingFee ?? 0,
+      depositAmount: data.depositAmount ?? 0,
       grandTotal,
       notes: finalNotes,
       expiryDate: data.expiryDate ? new Date(data.expiryDate) : undefined
-    },
+    } as any,
     include: {
       items: true,
       customer: true
