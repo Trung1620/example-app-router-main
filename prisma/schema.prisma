@@ -612,9 +612,15 @@ model Quote {
   deliveries Delivery[] // Lịch sử các lần giao hàng cho đơn này
 
   subTotal      Float @default(0) // Tổng tiền hàng (trước giảm giá)
-  discount      Float @default(0) // Số tiền giảm giá cho đơn
-  shippingFee   Float @default(0) // Phí vận chuyển báo khách
-  grandTotal    Float @default(0) // Tổng thanh toán cuối cùng
+  discountPercent Float @default(0) // % Giảm giá
+  discountAmount  Float @default(0) // Số tiền giảm giá
+  taxPercent      Float @default(0) // % VAT
+  taxAmount       Float @default(0) // Tiền thuế VAT
+  householdTaxPercent Float @default(0) // % Thuế hộ kinh doanh
+  householdTaxAmount  Float @default(0) // Tiền thuế hộ kinh doanh
+  shippingFee     Float @default(0) // Phí vận chuyển báo khách
+  depositAmount   Float @default(0) // Tiền đặt cọc
+  grandTotal      Float @default(0) // Tổng thanh toán cuối cùng
   
   paymentMethod PaymentMethod @default(CASH) // Phương thức: Tiền mặt (CASH), Chuyển khoản (BANK), Ghi nợ (DEBT)
   paymentStatus PaymentStatus @default(UNPAID) // Trạng thái: Chưa thanh (UNPAID), Một phần (PARTIAL), Đã xong (PAID)
@@ -645,6 +651,11 @@ model QuoteItem {
   // Snapshot fields for easier grouping and historical accuracy
   sku       String?
   nameVi    String?
+  nameEn    String?
+  size      String?
+  unit      String?
+  note      String?
+  imageUrl  String?
 }
 
 enum DeliveryStatus {
