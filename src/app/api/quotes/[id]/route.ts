@@ -86,6 +86,8 @@ const PatchBody = z.object({
   status: z
     .enum(["DRAFT", "SENT", "ACCEPTED", "REJECTED", "EXPIRED", "CONVERTED", "CONFIRMED", "DELIVERING", "DONE"])
     .optional(),
+  paymentMethod: z.enum(["CASH", "BANK", "DEBT"]).optional(),
+  paymentStatus: z.enum(["UNPAID", "PARTIAL", "PAID"]).optional(),
 });
 
 type PatchBodyIn = z.infer<typeof PatchBody>;
@@ -247,6 +249,8 @@ export async function PATCH(
         notesVi: body.notesVi ?? current.notesVi,
         notesEn: body.notesEn ?? current.notesEn,
         validUntil: body.validUntil ?? current.validUntil,
+        paymentMethod: body.paymentMethod ?? current.paymentMethod,
+        paymentStatus: body.paymentStatus ?? current.paymentStatus,
         items: {
           deleteMany: { quoteId: current.id },
           create: items.map((it: ItemIn) => ({
