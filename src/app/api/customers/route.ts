@@ -108,6 +108,12 @@ export async function POST(req: NextRequest) {
 
   const data = parsed.data;
 
+  // Lấy mã khách hàng hoặc tự sinh mã duy nhất để tránh lỗi trùng lặp (Unique Constraint)
+  let customerCode = (json as any).code || (json as any).customerCode;
+  if (!customerCode || customerCode.trim() === "") {
+    customerCode = `KH-${Date.now().toString().slice(-6)}${Math.floor(Math.random() * 100)}`;
+  }
+
   // Lưu đầy đủ các trường để đồng bộ FrontEnd & BackEnd
   const prismaData: any = {
     orgId,
@@ -124,7 +130,7 @@ export async function POST(req: NextRequest) {
     note: data.note || (json as any).note || (json as any).notes,
     image: data.image || (json as any).image,
 
-    code: (json as any).code || undefined,
+    code: customerCode,
     zalo: (json as any).zalo || undefined,
     facebook: (json as any).facebook || undefined,
     birthday: (json as any).birthday ? new Date((json as any).birthday) : undefined,
