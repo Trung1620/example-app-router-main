@@ -17,7 +17,10 @@ export default function ProductCard({data}: ProductCardProps) {
 
   const name = (locale === 'vi' ? data.nameVi : data.nameEn) ?? t('noName');
   const price = locale === 'vi' ? (data.priceVnd ?? 0) : (data.priceUsd ?? 0);
-  const imageUrl = data.images?.[0]?.url || '/placeholder.png';
+  
+  // Hỗ trợ cả định dạng [ {url: '...'} ] và [ 'http://...' ]
+  const firstImage = data.images?.[0];
+  const imageUrl = (typeof firstImage === 'string' ? firstImage : (firstImage as any)?.url) || '/placeholder.png';
 
   const sizeText = data.size ?? t('noSize');
 
