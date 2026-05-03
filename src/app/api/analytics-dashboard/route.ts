@@ -15,18 +15,32 @@ export async function GET(req: NextRequest) {
     let fromDate = from ? new Date(from) : new Date(now.getFullYear(), now.getMonth(), 1);
     let toDate = to ? new Date(to) : new Date(now.getFullYear(), now.getMonth() + 1, 0);
 
-    if (period === "today") {
-      fromDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1); // Lùi 1 ngày cho chắc
+    // Đồng bộ với các period từ Frontend: "day", "week", "month", "quarter"
+    if (period === "day") {
+      fromDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1); 
       fromDate.setHours(0, 0, 0, 0);
-      toDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1); // Tiến 1 ngày cho chắc
+      toDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
       toDate.setHours(23, 59, 59, 999);
     } else if (period === "week") {
       const day = now.getDay() || 7;
       fromDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - day + 1);
       fromDate.setHours(0, 0, 0, 0);
-      toDate = new Date();
+      toDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() + (7 - day));
+      toDate.setHours(23, 59, 59, 999);
+    } else if (period === "month") {
+      fromDate = new Date(now.getFullYear(), now.getMonth(), 1);
+      fromDate.setHours(0, 0, 0, 0);
+      toDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+      toDate.setHours(23, 59, 59, 999);
+    } else if (period === "quarter") {
+      const quarter = Math.floor(now.getMonth() / 3);
+      fromDate = new Date(now.getFullYear(), quarter * 3, 1);
+      fromDate.setHours(0, 0, 0, 0);
+      toDate = new Date(now.getFullYear(), (quarter + 1) * 3, 0);
       toDate.setHours(23, 59, 59, 999);
     }
+
+    console.log(`[Dashboard] orgId: ${orgId}, period: ${period}, from: ${fromDate.toISOString()}, to: ${toDate.toISOString()}`);
 
     const quoteModel = (prismadb as any).quote || (prismadb as any).Quote;
     const productionOrderModel = (prismadb as any).productionOrder || (prismadb as any).ProductionOrder;
