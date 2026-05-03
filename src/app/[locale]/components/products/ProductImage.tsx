@@ -29,30 +29,36 @@ const ProductImage: React.FC<ProductImageProps> = ({
         cursor-pointer border h-full max-h-[500px] min-h-[300px] sm:min-h-[400px]"
       >
         {productImages.length > 0 ? (
-          productImages.map((image: any) => (
-            <div
-              key={image.colorName}
-              onClick={() =>
-                handleColorSelect({
-                  image: image.url,
-                  color: image.colorName,
-                  colorCode: image.colorCode,
-                })
-              }
-              className={`relative w-[80%] aspect-square rounded border-teal-300 ${
-                cartProduct.selectedImg.color === image.colorName
-                  ? "border-[1.5px]"
-                  : "border-none"
-              }`}
-            >
-              <Image
-                src={image.url || "/placeholder.png"}
-                alt={`Image of product color ${image.colorName || "unknown"}`}
-                fill
-                className="object-contain"
-              />
-            </div>
-          ))
+          productImages.map((image: any, idx: number) => {
+            const imageUrl = typeof image === 'string' ? image : image.url;
+            const colorName = image.colorName || `Image ${idx + 1}`;
+            const colorCode = image.colorCode || "#000000";
+
+            return (
+              <div
+                key={idx}
+                onClick={() =>
+                  handleColorSelect({
+                    image: imageUrl,
+                    color: colorName,
+                    colorCode: colorCode,
+                  })
+                }
+                className={`relative w-[80%] aspect-square rounded border-teal-300 ${
+                  cartProduct.selectedImg.color === colorName
+                    ? "border-[1.5px]"
+                    : "border-none"
+                }`}
+              >
+                <Image
+                  src={imageUrl || "/placeholder.png"}
+                  alt={`Image of product color ${colorName}`}
+                  fill
+                  className="object-contain"
+                />
+              </div>
+            );
+          })
         ) : (
           <p className="text-sm text-slate-500 text-center">No images</p>
         )}

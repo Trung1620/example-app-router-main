@@ -59,8 +59,8 @@ const ProductDetails: React.FC<ProductDetailsProps> = ({ product }) => {
     brand: product.brand,
     selectedImg: product.images?.[0]
       ? {
-          image: product.images[0].url,
-          color: product.images[0].colorName,
+          image: typeof product.images[0] === 'string' ? product.images[0] : product.images[0].url,
+          color: product.images[0].colorName || "Default",
           colorCode: product.images[0].colorCode || "#000000",
         }
       : fallbackImage,

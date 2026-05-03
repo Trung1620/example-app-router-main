@@ -17,26 +17,32 @@ const SetColor: React.FC<SetColorProps> = ({ images, cartProduct, handleColorSel
     <div className="flex items-center gap-4 mt-2">
       <span className="font-semibold text-sm">COLOR:</span>
       <div className="flex gap-2">
-        {images.map((img) => (
-          <div
-            key={img.colorName}
-            onClick={() =>
-              handleColorSelect({
-                image: img.url,
-                color: img.colorName,
-                colorCode: img.colorCode,
-              })
-            }
-            className={`h-7 w-7 rounded-full flex items-center justify-center cursor-pointer
-              ${cartProduct.selectedImg.color === img.colorName ? "ring-2 ring-teal-500" : ""}
-            `}
-          >
+        {images.map((img: any, idx: number) => {
+          const imageUrl = typeof img === 'string' ? img : img.url;
+          const colorName = img.colorName || `Color ${idx + 1}`;
+          const colorCode = img.colorCode || "#000000";
+
+          return (
             <div
-              className="h-5 w-5 rounded-full border border-slate-300"
-              style={{ backgroundColor: img.colorCode }}
-            ></div>
-          </div>
-        ))}
+              key={idx}
+              onClick={() =>
+                handleColorSelect({
+                  image: imageUrl,
+                  color: colorName,
+                  colorCode: colorCode,
+                })
+              }
+              className={`h-7 w-7 rounded-full flex items-center justify-center cursor-pointer
+                ${cartProduct.selectedImg.color === colorName ? "ring-2 ring-teal-500" : ""}
+              `}
+            >
+              <div
+                className="h-5 w-5 rounded-full border border-slate-300"
+                style={{ backgroundColor: colorCode }}
+              ></div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
