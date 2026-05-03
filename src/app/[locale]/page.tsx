@@ -1,5 +1,6 @@
 // src/app/[locale]/page.tsx
 import { getTranslations } from 'next-intl/server';
+export const dynamic = 'force-dynamic';
 import Container from './components/Container';
 import HomeBannerCarousel, { BannerProduct } from './components/HomeBannerCarousel';
 
@@ -50,36 +51,32 @@ export default async function HomePage({ params, searchParams }: HomePageProps) 
   /** ===== BANNER ===== */
   let bannerItems: BannerProduct[] = [];
   try {
-    const settings = await prisma.siteSettings.findUnique({
-      where: { id: 'site' },
-      select: { homeBannerProductIds: true },
+    // Lấy 3 sản phẩm mới nhất làm Banner thay vì siteSettings không tồn tại
+    const bannerProducts = await prisma.product.findMany({
+      take: 3,
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        nameVi: true,
+        priceVnd: true,
+        images: true,
+      },
     });
 
-    const ids = settings?.homeBannerProductIds ?? [];
-
-    if (ids.length > 0) {
-      const bannerProducts = (await prisma.product.findMany({
-        where: { id: { in: ids } },
-        select: {
-          id: true,
-          nameVi: true,
-          priceVnd: true,
-          images: { select: { url: true } },
-        },
-      })) as BannerProductFromDb[];
-
-      bannerItems = ids
-        .map((id) => bannerProducts.find((p) => p.id === id))
-        .filter(Boolean)
-        .map((p) => ({
-          id: p!.id,
-          slug: p!.id,
-          name: p!.nameVi ?? 'Sản phẩm',
-          price: Number(p!.priceVnd ?? 0),
-          imageUrl: p!.images?.[0]?.url ?? '/placeholder.png',
-        }));
-    }
-  } catch {
+    bannerItems = bannerProducts.map((p: any) => {
+      const firstImage = p.images?.[0];
+      const imageUrl = (typeof firstImage === 'string' ? firstImage : firstImage?.url) || '/placeholder.png';
+      
+      return {
+        id: p.id,
+        slug: p.id,
+        name: p.nameVi ?? 'Sản phẩm',
+        price: Number(p.priceVnd ?? 0),
+        imageUrl: imageUrl,
+      };
+    });
+  } catch (error) {
+    console.error("Banner Error:", error);
     bannerItems = [];
   }
 
