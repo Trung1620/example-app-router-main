@@ -121,29 +121,43 @@ export async function PATCH(req: NextRequest, { params }: Ctx) {
   const parsed = PatchBody.safeParse(json);
   if (!parsed.success) return json400(parsed.error);
 
-  const data: any = { ...parsed.data };
+  const data = parsed.data;
 
-  // ✅ nếu PATCH có gửi tags = null -> muốn clear tags => cho phép clear theo key riêng
-  // Nếu bạn muốn clear bằng null thì bật đoạn dưới:
-  // if ("tags" in json && (json.tags === null || json.tags === undefined)) data.tags = [];
+  // Cập nhật đầy đủ các trường
+  const prismaData: any = {};
+  if (data.name !== undefined) prismaData.name = data.name;
+  if (data.email !== undefined) prismaData.email = data.email;
+  if (data.phone !== undefined) prismaData.phone = data.phone;
+  if (data.address !== undefined) prismaData.address = data.address;
+  if (data.taxId !== undefined) prismaData.taxId = data.taxId;
+  
+  if ((json as any).type !== undefined) prismaData.type = (json as any).type;
+  if ((json as any).companyName !== undefined) prismaData.companyName = (json as any).companyName;
+  if ((json as any).contactName !== undefined) prismaData.contactName = (json as any).contactName;
+  if ((json as any).tags !== undefined) prismaData.tags = (json as any).tags;
+  if ((json as any).note !== undefined) prismaData.note = (json as any).note;
+  if ((json as any).notes !== undefined) prismaData.note = (json as any).notes;
+  if ((json as any).image !== undefined) prismaData.image = (json as any).image;
 
-  // ✅ nếu muốn bắt buộc name không được rỗng khi gửi lên
-  if ("name" in data && (!data.name || String(data.name).trim() === "")) {
+  if ((json as any).code !== undefined) prismaData.code = (json as any).code;
+  if ((json as any).zalo !== undefined) prismaData.zalo = (json as any).zalo;
+  if ((json as any).facebook !== undefined) prismaData.facebook = (json as any).facebook;
+  if ((json as any).birthday !== undefined) prismaData.birthday = (json as any).birthday ? new Date((json as any).birthday) : null;
+  if ((json as any).groupName !== undefined) prismaData.groupName = (json as any).groupName;
+
+  try {
+    const updated = await prismadb.customer.update({
+      where: { id } as any,
+      data: prismaData,
+    });
+    return NextResponse.json(updated);
+  } catch (error: any) {
+    console.error("[CUSTOMER_PATCH_ERROR]", error);
     return NextResponse.json(
-      {
-        error: "Invalid input",
-        issues: [{ path: ["name"], message: "Name is required" }],
-      },
-      { status: 400 }
+      { error: error?.message || "Lỗi cập nhật dữ liệu khách hàng" },
+      { status: 500 }
     );
   }
-
-  const updated = await prismadb.customer.update({
-    where: { id } as any,
-    data,
-  });
-
-  return NextResponse.json(updated);
 }
 
 /** ====== DELETE /api/customers/[id] ======

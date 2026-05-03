@@ -56,7 +56,7 @@ const Body = z.object({
   groupName: optionalString,
   tags: tagsSchema,
 
-  notes: optionalString,
+  note: optionalString,
   image: optionalString,
 });
 
@@ -74,9 +74,7 @@ export async function GET(req: NextRequest) {
           { taxId: { contains: q, mode: "insensitive" } },
           { phone: { contains: q, mode: "insensitive" } },
           { email: { contains: q, mode: "insensitive" } },
-          // ✅ thêm group/tags search nhẹ
-          { groupName: { contains: q, mode: "insensitive" } },
-          { tags: { has: q } },
+          { groupName: { equals: q as any } }, // groupName is Enum
         ],
       }
       : {}),
@@ -110,9 +108,39 @@ export async function POST(req: NextRequest) {
 
   const data = parsed.data;
 
-  const created = await prismadb.customer.create({
-    data: { ...data, orgId },
-  });
+  // Lưu đầy đủ các trường để đồng bộ FrontEnd & BackEnd
+  const prismaData: any = {
+    orgId,
+    name: data.name,
+    email: data.email,
+    phone: data.phone,
+    address: data.address,
+    taxId: data.taxId,
+    
+    type: data.type || (json as any).type,
+    companyName: data.companyName || (json as any).companyName,
+    contactName: data.contactName || (json as any).contactName,
+    tags: data.tags || (json as any).tags || [],
+    note: data.note || (json as any).note || (json as any).notes,
+    image: data.image || (json as any).image,
 
-  return NextResponse.json(created, { status: 201 });
+    code: (json as any).code || undefined,
+    zalo: (json as any).zalo || undefined,
+    facebook: (json as any).facebook || undefined,
+    birthday: (json as any).birthday ? new Date((json as any).birthday) : undefined,
+    groupName: (json as any).groupName || "RETAIL",
+  };
+
+  try {
+    const created = await prismadb.customer.create({
+      data: prismaData,
+    });
+    return NextResponse.json(created, { status: 201 });
+  } catch (error: any) {
+    console.error("[CUSTOMER_POST_ERROR]", error);
+    return NextResponse.json(
+      { error: error?.message || "Lỗi lưu dữ liệu khách hàng" },
+      { status: 500 }
+    );
+  }
 }

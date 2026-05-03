@@ -549,6 +549,13 @@ model Customer {
   address     String? // Địa chỉ giao hàng/trụ sở
   taxId       String? // Mã số thuế (nếu có)
   
+  type        String? // individual | business
+  companyName String? // Tên công ty
+  contactName String? // Tên người liên hệ
+  tags        String[] @default([]) // Phân loại khách
+  note        String? // Ghi chú
+  image       String? // Ảnh đại diện/Logo
+
   zalo        String? // Link/SĐT Zalo
   facebook    String? // Link Facebook
   birthday    DateTime? // Ngày sinh nhật khách
