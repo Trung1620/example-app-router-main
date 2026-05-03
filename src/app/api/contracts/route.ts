@@ -29,7 +29,7 @@ export async function GET(req: Request) {
       id: q.id,
       number: q.number,
       status: q.status,
-      buyerName: q.customer?.name || q.customer?.companyName || "Khách lẻ",
+      buyerName: q.customer?.name || (q.customer as any)?.companyName || "Khách lẻ",
       quoteNumber: q.number,
       grandTotal: q.grandTotal,
       createdAt: q.createdAt,
