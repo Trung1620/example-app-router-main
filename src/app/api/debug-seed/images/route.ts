@@ -5,26 +5,18 @@ export const dynamic = "force-dynamic";
 
 export async function GET(req: Request) {
   try {
-    // 1. Tìm tổ chức (orgId) của sản phẩm "Thìa tre thủ công" mà bạn đang thấy
-    // Đây là cách để tự động lấy đúng OrgId mà App bạn đang dùng
-    const sampleProduct = await prismadb.product.findFirst({
-      where: { 
-        nameVi: "Thìa tre thủ công",
-        orgId: { not: "" } 
-      },
-      orderBy: { createdAt: 'desc' }
-    });
+    // 1. Lấy tất cả sản phẩm để xử lý trong Javascript (tránh lỗi query trực tiếp vào DB)
+    const allProducts = await prismadb.product.findMany();
 
-    if (!sampleProduct) {
-      return NextResponse.json({ error: "Không tìm thấy sản phẩm mẫu. Vui lòng bấm 'Đồng bộ dữ liệu mẫu' trên App trước 1 lần." });
+    // 2. Tìm một sản phẩm bất kỳ đã có OrgId hợp lệ (không phải rỗng)
+    const validProduct = allProducts.find(p => p.orgId && p.orgId.length > 5);
+
+    if (!validProduct) {
+      return NextResponse.json({ error: "Không tìm thấy xưởng nào. Hãy tạo mới 1 sản phẩm trên App trước." });
     }
 
-    const targetOrgId = sampleProduct.orgId;
+    const targetOrgId = validProduct.orgId;
 
-    // 2. Cập nhật tất cả sản phẩm khác về chung OrgId này 
-    // và đảm bảo tất cả đều có ảnh Cloudinary (phòng trường hợp có cái bị sót)
-    const allProducts = await prismadb.product.findMany();
-    
     const cloudinaryUrls = [
       "https://res.cloudinary.com/dgvlkztox/image/upload/v1777796703/seedsbiz/products/123969957078958096612.jpg",
       "https://res.cloudinary.com/dgvlkztox/image/upload/v1777796706/seedsbiz/products/123969957078958096613.jpg",
@@ -50,6 +42,7 @@ export async function GET(req: Request) {
       "https://res.cloudinary.com/dgvlkztox/image/upload/v1777796729/seedsbiz/products/5338872726882766912.jpg"
     ];
 
+    // 3. Cập nhật tất cả sản phẩm về chung OrgId này
     let updateCount = 0;
     for (let i = 0; i < allProducts.length; i++) {
       const p = allProducts[i];
@@ -59,7 +52,6 @@ export async function GET(req: Request) {
         where: { id: p.id },
         data: { 
           orgId: targetOrgId,
-          // Đảm bảo cập nhật luôn link ảnh Cloudinary cho chắc chắn
           images: (p.images && p.images.length > 0 && p.images[0].startsWith("http")) ? p.images : [imageUrl]
         }
       });
@@ -67,10 +59,11 @@ export async function GET(req: Request) {
     }
 
     return NextResponse.json({
-      message: `Đã gom toàn bộ ${updateCount} sản phẩm về xưởng của bạn thành công!`,
+      message: `Đã dọn dẹp và gom ${updateCount} sản phẩm về xưởng của bạn!`,
       orgId: targetOrgId
     });
   } catch (error: any) {
+    console.error("[SYNC_ERROR]", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
