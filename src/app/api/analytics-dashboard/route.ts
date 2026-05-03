@@ -15,10 +15,10 @@ export async function GET(req: NextRequest) {
     let fromDate = from ? new Date(from) : new Date(now.getFullYear(), now.getMonth(), 1);
     let toDate = to ? new Date(to) : new Date(now.getFullYear(), now.getMonth() + 1, 0);
 
-    if (period === "day") {
-      fromDate = new Date();
+    if (period === "today") {
+      fromDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1); // Lùi 1 ngày cho chắc
       fromDate.setHours(0, 0, 0, 0);
-      toDate = new Date();
+      toDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1); // Tiến 1 ngày cho chắc
       toDate.setHours(23, 59, 59, 999);
     } else if (period === "week") {
       const day = now.getDay() || 7;
