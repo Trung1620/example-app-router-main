@@ -71,6 +71,7 @@ export async function POST(req: Request) {
       inStock, 
       status, 
       images,
+      stockCount,
     } = body;
 
     const product = await prismadb.product.create({
@@ -98,6 +99,22 @@ export async function POST(req: Request) {
         stockBalances: true,
       }
     });
+
+    if (typeof stockCount === 'number' && stockCount > 0) {
+        const warehouse = await prismadb.warehouse.findFirst({ where: { orgId } });
+        if (warehouse) {
+            await prismadb.stockBalance.create({
+                data: {
+                    orgId,
+                    warehouseId: warehouse.id,
+                    productId: product.id,
+                    qty: stockCount
+                }
+            });
+            // Update the product's returned stockBalances manually for the response
+            product.stockBalances = [{ qty: stockCount, warehouseId: warehouse.id, productId: product.id } as any];
+        }
+    }
 
     return NextResponse.json(product);
   } catch (error: any) {
